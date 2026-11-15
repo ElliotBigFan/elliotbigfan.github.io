@@ -1,0 +1,1121 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>HTTP Request Smuggling | H00d1eBl4ck</title><meta name="author" content="H00d1eBl4ck"><meta name="copyright" content="H00d1eBl4ck"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="HTTP Request Smuggling (HRS): Cơ chế, kỹ thuật khai thác và phương pháp kiểm chứng Bản nghiên cứu đã hiệu đính và mở rộng — 15&#x2F;11&#x2F;2026Đây là bài blog mà mình tổng hợp về các kiến thức cần nắ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTTP Request Smuggling">
+<meta property="og:url" content="https://elliotbigfan.github.io/2026/11/15/Research/web/http-request-smuggling/index.html">
+<meta property="og:site_name" content="H00d1eBl4ck">
+<meta property="og:description" content="HTTP Request Smuggling (HRS): Cơ chế, kỹ thuật khai thác và phương pháp kiểm chứng Bản nghiên cứu đã hiệu đính và mở rộng — 15&#x2F;11&#x2F;2026Đây là bài blog mà mình tổng hợp về các kiến thức cần nắ">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://elliotbigfan.github.io/img/research/web/http-request-smuggling/poster.png">
+<meta property="article:published_time" content="2026-11-15T12:46:51.000Z">
+<meta property="article:modified_time" content="2026-11-15T12:56:33.914Z">
+<meta property="article:author" content="H00d1eBl4ck">
+<meta property="article:tag" content="Research">
+<meta property="article:tag" content="Web">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://elliotbigfan.github.io/img/research/web/http-request-smuggling/poster.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "HTTP Request Smuggling",
+  "url": "https://elliotbigfan.github.io/2026/11/15/Research/web/http-request-smuggling/",
+  "image": "https://elliotbigfan.github.io/img/research/web/http-request-smuggling/poster.png",
+  "datePublished": "2026-11-15T12:46:51.000Z",
+  "dateModified": "2026-11-15T12:56:33.914Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "H00d1eBl4ck",
+      "url": "https://elliotbigfan.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon_io/favicon.ico"><link rel="canonical" href="https://elliotbigfan.github.io/2026/11/15/Research/web/http-request-smuggling/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: 'days',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: true,
+  islazyloadPlugin: false,
+  isAnchor: true,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'HTTP Request Smuggling',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">23</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url(/img/research/web/http-request-smuggling/poster.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon_io/favicon.ico" alt="Logo"><span class="site-name">H00d1eBl4ck</span></a><a class="nav-page-title" href="/"><span class="site-name">HTTP Request Smuggling</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div><div class="menus_item"><a class="site-page" href="/bookmark/"><i class="fa-fw fas fa-bookmark"></i><span> Bookmark</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-person"></i><span> About Me</span></a></div><div class="menus_item"><a class="site-page" href="/certificate/"><i class="fa-fw fas fa-certificate"></i><span> Certificate</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">HTTP Request Smuggling</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-11-15T12:46:51.000Z" title="Created 2026-11-15 19:46:51">2026-11-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-11-15T12:56:33.914Z" title="Updated 2026-11-15 19:56:33">2026-11-15</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Research/">Research</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Research/HTTP-Request-Smuggling/">HTTP Request Smuggling</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">13.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>84mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="HTTP-Request-Smuggling-HRS-Co-che-ky-thuat-khai-thac-va-phuong-phap-kiem-chung"><a href="#HTTP-Request-Smuggling-HRS-Co-che-ky-thuat-khai-thac-va-phuong-phap-kiem-chung" class="headerlink" title="HTTP Request Smuggling (HRS): Cơ chế, kỹ thuật khai thác và phương pháp kiểm chứng"></a>HTTP Request Smuggling (HRS): Cơ chế, kỹ thuật khai thác và phương pháp kiểm chứng</h1><blockquote>
+<p><strong>Bản nghiên cứu đã hiệu đính và mở rộng</strong> — 15&#x2F;11&#x2F;2026<br>Đây là bài blog mà mình tổng hợp về các kiến thức cần nắm trong kỹ thuật khai thác HTTP Request Smuggling.<br>Phạm vi: HTTP&#x2F;1.x, HTTP&#x2F;2 downgrading, CL.TE, TE.CL, TE.TE, CL.0, 0.CL, client-side desync, pause-based desync, response queue poisoning và request tunnelling.  </p>
+</blockquote>
+<hr>
+<h2 id="Muc-luc"><a href="#Muc-luc" class="headerlink" title="Mục lục"></a>Mục lục</h2><ol>
+<li><a href="#i-kh%C3%A1i-ni%E1%BB%87m-v%C3%A0-m%C3%B4-h%C3%ACnh-%C4%91e-d%E1%BB%8Da">I. Khái niệm và mô hình đe dọa</a></li>
+<li><a href="#ii-http10-http11-v%C3%A0-framing">II. HTTP&#x2F;1.0, HTTP&#x2F;1.1 và framing</a></li>
+<li><a href="#iii-http2-v%C3%A0-c%C3%A1c-kh%C3%A1c-bi%E1%BB%87t-thi%E1%BA%BFt-k%E1%BA%BF">III. HTTP&#x2F;2 và các khác biệt thiết kế</a></li>
+<li><a href="#iv-so-s%C3%A1nh-c%C3%A1c-phi%C3%AAn-b%E1%BA%A3n-http">IV. So sánh các phiên bản HTTP</a></li>
+<li><a href="#v-clte--frontend-d%C3%B9ng-content-length-backend-d%C3%B9ng-transfer-encoding">V. CL.TE</a></li>
+<li><a href="#vi-tecl--frontend-d%C3%B9ng-transfer-encoding-backend-d%C3%B9ng-content-length">VI. TE.CL</a></li>
+<li><a href="#vii-tete-v%C3%A0-header-obfuscation">VII. TE.TE và header obfuscation</a></li>
+<li><a href="#viii-http2-downgrading-h2cl-h2te-v%C3%A0-crlf-injection">VIII. HTTP&#x2F;2 downgrading: H2.CL, H2.TE, CRLF</a></li>
+<li><a href="#ix-cl0-v%C3%A0-h20">IX. CL.0 và H2.0</a></li>
+<li><a href="#x-0cl-early-response-v%C3%A0-double-desync">X. 0.CL, early response và double-desync</a></li>
+<li><a href="#xi-client-side-desync-csd">XI. Client-side desync</a></li>
+<li><a href="#xii-pause-based-desync">XII. Pause-based desync</a></li>
+<li><a href="#xiii-request-tunnelling">XIII. Request tunnelling</a></li>
+<li><a href="#xiv-ki%E1%BB%83m-th%E1%BB%AD-x%C3%A1c-minh-v%C3%A0-ph%C3%B2ng-th%E1%BB%A7">XIV. Kiểm thử, xác minh và phòng thủ</a></li>
+<li><a href="#xv-t%E1%BB%95ng-h%E1%BB%A3p-nh%E1%BB%AFng-%C4%91i%E1%BB%83m-d%E1%BB%85-nh%E1%BA%A7m-v%C3%A0-ngu%E1%BB%93n">XV. Tổng hợp, những điểm dễ nhầm và nguồn</a></li>
+</ol>
+<h2 id="Nhung-hieu-dinh-quan-trong-so-voi-ban-thao-goc"><a href="#Nhung-hieu-dinh-quan-trong-so-voi-ban-thao-goc" class="headerlink" title="Những hiệu đính quan trọng so với bản thảo gốc"></a>Những hiệu đính quan trọng so với bản thảo gốc</h2><table>
+<thead>
+<tr>
+<th>Mức độ</th>
+<th>Nội dung hiệu đính</th>
+<th>Vì sao quan trọng</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Phân biệt <strong>HTTP message framing</strong> với <strong>TCP buffering</strong></td>
+<td>TCP không biết request nào là body hay header; HTTP parser quyết định ranh giới.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Sửa mô tả RFC khi đồng thời có <code>Content-Length</code> và <code>Transfer-Encoding</code></td>
+<td>RFC 9112 cho phép máy chủ <strong>từ chối hoặc xử lý theo TE</strong>, nhưng phải đóng kết nối sau khi trả lời loại request đó; trung gian forward phải loại bỏ CL.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Sửa HTTP&#x2F;1.0: request không phải close-delimited; connection close chủ yếu liên quan đến response</td>
+<td>Tránh xây dựng toàn bộ lập luận trên một cơ chế framing sai.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Sửa <code>:host</code> thành <code>:authority</code> trong HTTP&#x2F;2</td>
+<td><code>:host</code> không phải pseudo-header hợp lệ. <code>host</code> không có dấu <code>:</code> là regular header.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Sửa khẳng định HTTP&#x2F;2 cho phép CR&#x2F;LF&#x2F;NUL trong header value</td>
+<td>HPACK biểu diễn được byte đó, nhưng RFC 9113 <strong>cấm</strong> trong field value; chấp nhận&#x2F;chuyển tiếp chúng là lỗi triển khai.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Phân biệt <strong>early response</strong> và <strong>bỏ qua body</strong></td>
+<td>Nhận <code>200 OK</code> sớm không có nghĩa backend không còn tiêu thụ body.</td>
+</tr>
+<tr>
+<td><strong>Bắt buộc</strong></td>
+<td>Phân biệt 0.CL test, double-desync, response queue poisoning và lab Solved</td>
+<td>Mỗi bước chứng minh một điều khác nhau.</td>
+</tr>
+<tr>
+<td><strong>Cần làm rõ</strong></td>
+<td>TE.TE là nhóm tình huống làm rối khiến hệ thống thực tế hành xử như CL.TE hoặc TE.CL</td>
+<td>Không phải cơ chế framing thứ ba trong RFC.</td>
+</tr>
+<tr>
+<td><strong>Cần làm rõ</strong></td>
+<td>HEAD, CSD, pause-based, tunnelling phụ thuộc parser, kết nối, timing và phản hồi thực tế</td>
+<td>Không nên trình bày một mẫu payload như bảo đảm hoạt động ở mọi hệ thống.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="I-Khai-niem-va-mo-hinh-de-doa"><a href="#I-Khai-niem-va-mo-hinh-de-doa" class="headerlink" title="I. Khái niệm và mô hình đe dọa"></a>I. Khái niệm và mô hình đe dọa</h2><h3 id="1-HTTP-Request-Smuggling-la-gi"><a href="#1-HTTP-Request-Smuggling-la-gi" class="headerlink" title="1. HTTP Request Smuggling là gì?"></a>1. HTTP Request Smuggling là gì?</h3><p><strong>HTTP Request Smuggling (HRS)</strong> xảy ra khi các thành phần xử lý cùng một luồng HTTP <strong>không thống nhất về ranh giới của request</strong>. Một chuỗi byte có thể là <em>body của request A</em> theo frontend, nhưng lại là <em>phần đầu request B</em> theo backend. Lỗi này thường thuộc nhóm <strong>CWE-444: Inconsistent Interpretation of HTTP Requests</strong>.</p>
+<p>Kiến trúc thường gặp:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Client / Attacker</span><br><span class="line">        |</span><br><span class="line">        v</span><br><span class="line"> [Frontend / CDN / Reverse Proxy]</span><br><span class="line">        |</span><br><span class="line">        | Kết nối upstream được tái sử dụng</span><br><span class="line">        v</span><br><span class="line"> [Backend / Application Server]</span><br></pre></td></tr></table></figure>
+
+<p>Ví dụ hai bộ phân tích HTTP hiểu khác nhau:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Frontend: [ Request A: headers + body........................... ]</span><br><span class="line">Backend:  [ Request A: headers + body ] [ Request B: injected..... ]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Phần cốt lõi là sai khác về framing</strong>, không phải có thêm một header bất thường đơn thuần. Payload gây lỗi chỉ trở thành HRS có ý nghĩa khi sai khác đó dẫn đến ảnh hưởng thực tế: vượt kiểm soát frontend, làm thay đổi request, tráo response, hoặc rò rỉ dữ liệu.</p>
+<h3 id="2-Ba-khai-niem-khong-duoc-danh-dong"><a href="#2-Ba-khai-niem-khong-duoc-danh-dong" class="headerlink" title="2. Ba khái niệm không được đánh đồng"></a>2. Ba khái niệm không được đánh đồng</h3><ul>
+<li><strong>Request smuggling &#x2F; desync:</strong> Ranh giới request được xác định khác nhau, hoặc khác nhau theo thời gian trên kết nối.</li>
+<li><strong>Response queue poisoning:</strong> Backend tạo response mà frontend ghép sai sang request khác. Đây là một <strong>hệ quả khai thác</strong>, không phải đồng nghĩa với mọi HRS.</li>
+<li><strong>Request tunnelling:</strong> Có thể chuyển request ẩn qua frontend và quan sát&#x2F;tác động tới response của nó <strong>ngay cả khi không tái sử dụng kết nối với người dùng khác</strong>.</li>
+</ul>
+<p>Một lỗi HRS có thể chỉ gây timeout hoặc lỗi 400, chưa đủ để chứng minh response poisoning.</p>
+<h3 id="3-Lop-giao-thuc-TCP-khong-phan-tich-HTTP"><a href="#3-Lop-giao-thuc-TCP-khong-phan-tich-HTTP" class="headerlink" title="3. Lớp giao thức: TCP không phân tích HTTP"></a>3. Lớp giao thức: TCP không phân tích HTTP</h3><p>TCP truyền một <strong>luồng byte có thứ tự</strong>. Một <code>recv()</code> có thể trả một phần request, một request hoàn chỉnh hoặc nhiều request; ranh giới của một gói TCP không tương đương ranh giới thông điệp HTTP.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TCP receive buffer:  b&#x27;POST /...\r\n...\r\n\r\nGET /...&#x27;</span><br><span class="line">HTTP parser:         tự quyết định byte nào là body, byte nào mở request mới</span><br></pre></td></tr></table></figure>
+
+<p>Do đó, cách diễn đạt chuẩn là: <em>“Một số byte vẫn còn trong luồng đầu vào của kết nối và có thể được parser backend diễn giải thành request tiếp theo”</em>. Không nên mặc định rằng <em>“backend bỏ request vào TCP buffer”</em> hoặc <em>“mọi dữ liệu thừa luôn đợi nạn nhân”</em>.</p>
+<h3 id="4-Dieu-kien-giup-tac-dong-den-nan-nhan"><a href="#4-Dieu-kien-giup-tac-dong-den-nan-nhan" class="headerlink" title="4. Điều kiện giúp tác động đến nạn nhân"></a>4. Điều kiện giúp tác động đến nạn nhân</h3><p>Trong mô hình server-side truyền thống, thường cần:</p>
+<ol>
+<li>Frontend và backend <strong>diễn giải ranh giới khác nhau</strong>.</li>
+<li>Byte của request tiếp theo đi qua <strong>cùng một kết nối upstream</strong> bị lệch pha.</li>
+<li>Kết nối không bị hủy trước khi tác động được người dùng khác.</li>
+<li>Các biện pháp xác thực, định tuyến, caching hoặc mapping response có thể bị ảnh hưởng.</li>
+</ol>
+<p>Không phải mọi backend đều chia sẻ kết nối giữa các người dùng. Chính sách pool, upstream HTTP&#x2F;2, đóng socket, và xử lý lỗi ảnh hưởng trực tiếp khả năng khai thác.</p>
+<hr>
+<h2 id="II-HTTP-1-0-HTTP-1-1-va-framing"><a href="#II-HTTP-1-0-HTTP-1-1-va-framing" class="headerlink" title="II. HTTP&#x2F;1.0, HTTP&#x2F;1.1 và framing"></a>II. HTTP&#x2F;1.0, HTTP&#x2F;1.1 và framing</h2><h3 id="1-HTTP-1-0-—-can-sua-mot-ngo-nhan-thuong-gap"><a href="#1-HTTP-1-0-—-can-sua-mot-ngo-nhan-thuong-gap" class="headerlink" title="1. HTTP&#x2F;1.0 — cần sửa một ngộ nhận thường gặp"></a>1. HTTP&#x2F;1.0 — cần sửa một ngộ nhận thường gặp</h3><p>HTTP&#x2F;1.0 thường sử dụng kết nối không bền bỉ theo mặc định. Một số sản phẩm vẫn hỗ trợ <code>Connection: keep-alive</code> như tiện ích mở rộng.</p>
+<p><strong>Điều chỉnh quan trọng:</strong> Đóng kết nối có thể dùng để xác định <strong>kết thúc body của response</strong> trong những tình huống không có framing độ dài rõ ràng. <strong>Request HTTP&#x2F;1.x không được mặc định xác định độ dài bằng cách đóng kết nối</strong>. Với request, nếu không có <code>Transfer-Encoding</code> hoặc <code>Content-Length</code> hợp lệ thì độ dài body thường là <strong>0</strong> theo quy tắc framing HTTP&#x2F;1.1.</p>
+<p>Vì HTTP&#x2F;1.0 ít tái sử dụng kết nối hơn, bề mặt HRS <em>theo kiểu nối request của những người dùng khác</em> thấp hơn; nhưng không chính xác khi nói <strong>HTTP&#x2F;1.0 hoàn toàn không thể có lỗi tương tự</strong> trong mọi hệ thống proxy hay chuyển đổi giao thức.</p>
+<h3 id="2-HTTP-1-1-—-persistent-connection-va-pipelining"><a href="#2-HTTP-1-1-—-persistent-connection-va-pipelining" class="headerlink" title="2. HTTP&#x2F;1.1 — persistent connection và pipelining"></a>2. HTTP&#x2F;1.1 — persistent connection và pipelining</h3><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/index.html</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Trên dây, các dòng kết thúc bằng <strong>CRLF</strong> (<code>\r\n</code>), đoạn trống phân cách header và body là <code>\r\n\r\n</code>.</p>
+<ul>
+<li><strong>Persistent connection:</strong> HTTP&#x2F;1.1 mặc định cho phép giữ kết nối mở, trừ khi có điều kiện đóng (<code>Connection: close</code>, lỗi, timeout, giới hạn tài nguyên…).</li>
+<li><strong>Pipelining:</strong> Client có thể gửi các request nối tiếp trên cùng kết nối trước khi nhận response của request trước. Response phải được gửi đúng thứ tự request. Tính năng này không phổ biến ở trình duyệt hiện đại.</li>
+<li><strong>Connection pooling:</strong> Frontend có thể tái sử dụng các kết nối riêng tới backend cho nhiều request. <strong>Pooling không đồng nghĩa với việc frontend luôn pipeline nhiều request chưa trả lời</strong>. Nhiều proxy tuần tự hóa request; desync vẫn có thể xảy ra khi kết nối được tái sử dụng giữa các vòng request&#x2F;response.</li>
+</ul>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Persistent, không pipeline:</span><br><span class="line">Client -&gt; Req A -&gt; đợi Res A -&gt; Req B -&gt; đợi Res B</span><br><span class="line"></span><br><span class="line">Pipelining:</span><br><span class="line">Client -&gt; Req A + Req B + Req C</span><br><span class="line">Client &lt;- Res A + Res B + Res C (thứ tự bắt buộc)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Content-Length-CL"><a href="#3-Content-Length-CL" class="headerlink" title="3. Content-Length (CL)"></a>3. <code>Content-Length</code> (CL)</h3><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/submit</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>3</span><br><span class="line"></span><br><span class="line"><span class="language-abnf"><span class="attribute">x</span><span class="operator">=</span><span class="number">1</span></span></span><br></pre></td></tr></table></figure>
+
+<p><code>Content-Length: 3</code> nghĩa là có đúng <strong>3 octet&#x2F;byte</strong> body (<code>x=1</code>). Chỉ số ký tự không luôn bằng số byte nếu chứa UTF-8 đa byte.</p>
+<p><strong>Lưu ý:</strong> Method GET vẫn có thể mang <code>Content-Length</code>. Framing HTTP không tùy tiện biến <code>Content-Length</code> trên GET thành 0. RFC 9110 nói nội dung GET không có ngữ nghĩa phổ quát, có thể bị từ chối, nhưng không tuyên bố GET <em>không thể có body</em>.</p>
+<h3 id="4-Transfer-Encoding-chunked-TE"><a href="#4-Transfer-Encoding-chunked-TE" class="headerlink" title="4. Transfer-Encoding: chunked (TE)"></a>4. <code>Transfer-Encoding: chunked</code> (TE)</h3><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/submit</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-abnf"><span class="number">3</span></span></span><br><span class="line"><span class="language-abnf"><span class="attribute">x</span><span class="operator">=</span><span class="number">1</span></span></span><br><span class="line"><span class="language-abnf"><span class="number">0</span></span></span><br><span class="line"><span class="language-abnf"></span></span><br></pre></td></tr></table></figure>
+
+<p>Cấu trúc trên dây (ghi rõ CRLF):</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">3\r\n</span><br><span class="line">x=1\r\n</span><br><span class="line">0\r\n</span><br><span class="line">\r\n</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Kích thước chunk là <strong>số hex</strong>; <code>A</code> là 10 byte.</li>
+<li>Một chunk có định dạng <code>size[;extensions]\r\n</code> + <code>data</code> + <code>\r\n</code>.</li>
+<li>Chunk cuối có size <code>0</code>, sau đó có thể có <strong>trailer fields</strong>, rồi một dòng trống kết thúc trailer section. Chuỗi <code>0\r\n\r\n</code> chỉ đúng khi <strong>không có trailer</strong>.</li>
+<li><code>Transfer-Encoding: chunked</code> là cơ chế HTTP&#x2F;1.1, <strong>không được dùng như hop-by-hop field trong HTTP&#x2F;2</strong>.</li>
+</ul>
+<h3 id="5-Uu-tien-framing-va-RFC-9112-muc-6-1–6-3"><a href="#5-Uu-tien-framing-va-RFC-9112-muc-6-1–6-3" class="headerlink" title="5. Ưu tiên framing và RFC 9112 (mục 6.1–6.3)"></a>5. Ưu tiên framing và RFC 9112 (mục 6.1–6.3)</h3><p>Các nguyên tắc cần nhớ:</p>
+<table>
+<thead>
+<tr>
+<th>Trường hợp</th>
+<th>Xử lý đúng chuẩn hoặc an toàn</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Request không TE, không CL</td>
+<td>Body dài 0 byte.</td>
+</tr>
+<tr>
+<td>Request có CL hợp lệ, không TE</td>
+<td>Body đúng CL byte.</td>
+</tr>
+<tr>
+<td>Request có TE kết thúc bằng <code>chunked</code></td>
+<td>Ranh giới theo chunked.</td>
+</tr>
+<tr>
+<td>Có cả TE và CL</td>
+<td><strong>TE có độ ưu tiên framing</strong>; đây là tình huống nguy hiểm. Server <strong>có thể từ chối hoặc xử lý theo TE nhưng phải đóng kết nối sau phản hồi</strong>. Trung gian nếu forward phải xử lý TE và bỏ CL nhận được.</td>
+</tr>
+<tr>
+<td>TE trong request mà <code>chunked</code> không phải coding cuối</td>
+<td>Phải từ chối với 400 và đóng kết nối.</td>
+</tr>
+<tr>
+<td>CL không hợp lệ hoặc khác nhau</td>
+<td>Phải xử lý theo quy tắc nghiêm ngặt của RFC, không chọn tùy tiện header đầu&#x2F;cuối.</td>
+</tr>
+<tr>
+<td>Có whitespace giữa field-name và <code>:</code></td>
+<td>Server nhận request <strong>phải trả 400</strong>.</td>
+</tr>
+</tbody></table>
+<p><strong>Sửa so với bản cũ:</strong> Không viết <em>“RFC 9112 bắt buộc mọi request có TE + CL đều phải 400”</em>. Mệnh đề này quá mạnh; quy tắc chính xác nằm ở <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9112.html#section-6.3">RFC 9112 §6.1–6.3</a>.</p>
+<h3 id="6-Nhung-ngoai-le-quan-trong-o-chieu-response"><a href="#6-Nhung-ngoai-le-quan-trong-o-chieu-response" class="headerlink" title="6. Những ngoại lệ quan trọng ở chiều response"></a>6. Những ngoại lệ quan trọng ở chiều response</h3><ul>
+<li>Response cho <strong>HEAD</strong>: không có body dù có thể có <code>Content-Length</code> mô tả nội dung mà GET tương ứng sẽ có.</li>
+<li>Response <code>1xx</code>, <code>204</code>, <code>304</code>: không có message body theo quy tắc framing.</li>
+<li>Response <code>2xx</code> cho CONNECT: sau header, kết nối chuyển sang <strong>tunnel</strong>.</li>
+<li>Một số response không có CL&#x2F;TE có thể kết thúc body khi <strong>đóng kết nối</strong>; không lấy quy tắc này áp cho request.</li>
+</ul>
+<p>Các ngoại lệ này quan trọng khi nghiên cứu <strong>HEAD response confusion</strong> và <strong>request tunnelling</strong>.</p>
+<hr>
+<h2 id="III-HTTP-2-va-cac-khac-biet-thiet-ke"><a href="#III-HTTP-2-va-cac-khac-biet-thiet-ke" class="headerlink" title="III. HTTP&#x2F;2 và các khác biệt thiết kế"></a>III. HTTP&#x2F;2 và các khác biệt thiết kế</h2><h3 id="1-Binary-framing"><a href="#1-Binary-framing" class="headerlink" title="1. Binary framing"></a>1. Binary framing</h3><p>HTTP&#x2F;2 chuyển từ cách phân ranh giới dựa trên dòng text sang <strong>frame nhị phân</strong>. Mỗi frame có <strong>header 9 byte</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Trường</th>
+<th align="right">Độ dài</th>
+<th>Ý nghĩa</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Length</td>
+<td align="right">24 bit</td>
+<td>Số byte trong payload frame (không gồm 9 byte header).</td>
+</tr>
+<tr>
+<td>Type</td>
+<td align="right">8 bit</td>
+<td>DATA, HEADERS, SETTINGS, RST_STREAM, PING…</td>
+</tr>
+<tr>
+<td>Flags</td>
+<td align="right">8 bit</td>
+<td>Ví dụ <code>END_STREAM</code>, <code>END_HEADERS</code>; ý nghĩa tùy frame type.</td>
+</tr>
+<tr>
+<td>R + Stream Identifier</td>
+<td align="right">1 + 31 bit</td>
+<td>Xác định stream; bit R dành riêng.</td>
+</tr>
+</tbody></table>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">+--------------------+-----------+-----------+</span><br><span class="line">| Length (24 bits)   | Type (8)  | Flags (8) |</span><br><span class="line">+---+----------------------------------------+</span><br><span class="line">| R | Stream Identifier (31 bits)            |</span><br><span class="line">+---+----------------------------------------+</span><br><span class="line">| Frame Payload (Length bytes)               |</span><br><span class="line">+--------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>Giá trị khởi đầu mặc định cho giới hạn payload frame là <strong>16.384 byte</strong>; <code>SETTINGS_MAX_FRAME_SIZE</code> cho phép thương lượng mức lớn hơn trong giới hạn chuẩn, không phải mọi frame đều mặc định tối đa 16 MiB.</p>
+<p><strong>Frame Length là độ dài của một frame, không trực tiếp bằng độ dài toàn bộ HTTP message.</strong> Message trải qua nhiều HEADERS &#x2F; CONTINUATION &#x2F; DATA frame; kết thúc stream thường được đánh dấu bằng <code>END_STREAM</code>.</p>
+<h3 id="2-Multiplexing-va-Stream-ID"><a href="#2-Multiplexing-va-Stream-ID" class="headerlink" title="2. Multiplexing và Stream ID"></a>2. Multiplexing và Stream ID</h3><ul>
+<li>Nhiều stream được ghép xen kẽ trên một kết nối TCP.</li>
+<li>Stream ID khác 0 xác định các luồng độc lập. Stream 0 dùng cho thông điệp điều khiển cấp kết nối.</li>
+<li>Client-initiated stream thường dùng ID lẻ; server-initiated stream dùng ID chẵn theo mô hình push của HTTP&#x2F;2. Tuy nhiên, <strong>Server Push không còn phổ biến ở nhiều trình duyệt</strong>; không nên xem nó là một cơ chế trao đổi request chung như HTTP&#x2F;1.1.</li>
+<li>HTTP&#x2F;2 tránh một số lỗi framing của HTTP&#x2F;1.1, nhưng <strong>không tự động bảo vệ được toàn bộ kiến trúc nếu proxy downgrade sai</strong>.</li>
+</ul>
+<h3 id="3-Pseudo-headers-chinh-xac"><a href="#3-Pseudo-headers-chinh-xac" class="headerlink" title="3. Pseudo-headers chính xác"></a>3. Pseudo-headers chính xác</h3><p>Ví dụ request HTTP&#x2F;2 về mặt logic:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">:method: GET</span><br><span class="line">:scheme: https</span><br><span class="line">:authority: target.test</span><br><span class="line">:path: /academy</span><br><span class="line">accept: text/html</span><br><span class="line">user-agent: ExampleBrowser</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>:host</code> không phải pseudo-header hợp lệ.</strong> Tên đúng cho authority là <code>:authority</code>; trường <code>host</code> thường có thể xuất hiện như regular header nhưng cần nhất quán với authority khi chuyển đổi.</p>
+<p>Pseudo-headers phải theo đúng yêu cầu của HTTP&#x2F;2 và không được tự đặt tùy tiện.</p>
+<h3 id="4-Dieu-kien-RFC-9113-ve-content-length-va-field-validity"><a href="#4-Dieu-kien-RFC-9113-ve-content-length-va-field-validity" class="headerlink" title="4. Điều kiện RFC 9113 về content-length và field validity"></a>4. Điều kiện RFC 9113 về <code>content-length</code> và field validity</h3><ul>
+<li><code>content-length</code> trong HTTP&#x2F;2 <strong>được phép</strong>, nhưng nếu message có content thì giá trị phải khớp <strong>tổng độ dài DATA payload</strong> tạo nên nội dung, không tính frame headers&#x2F;padding. Không khớp thì message <strong>malformed</strong>.</li>
+<li>Các field như <code>connection</code>, <code>keep-alive</code>, <code>proxy-connection</code>, <code>transfer-encoding</code>, <code>upgrade</code> <strong>không được xuất hiện</strong> trong HTTP&#x2F;2. <strong>Ngoại lệ:</strong> header <code>te</code> chỉ có thể mang giá trị <code>trailers</code>.</li>
+<li>Field names phải viết thường; field values không được chứa <strong>CR (<code>\r</code>)</strong>, <strong>LF (<code>\n</code>)</strong>, <strong>NUL (<code>\x00</code>)</strong>. HPACK có thể biểu diễn những byte đó về mặt encoding, <strong>nhưng điều đó không khiến message chứa chúng trở nên hợp lệ</strong>.</li>
+</ul>
+<p>Do đó, H2 request smuggling thường đòi hỏi <strong>lỗi xác thực input, chuyển đổi hoặc normalize</strong> của một thành phần, chứ không phải HTTP&#x2F;2 hợp lệ vốn cho phép tùy tiện chèn CRLF.</p>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9113.html#section-8.1.1">RFC 9113 §8.1.1</a>, <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9113.html#section-8.2.1">§8.2.1</a>, <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9113.html#section-8.2.2">§8.2.2</a>.</p>
+<hr>
+<h2 id="IV-So-sanh-cac-phien-ban-HTTP"><a href="#IV-So-sanh-cac-phien-ban-HTTP" class="headerlink" title="IV. So sánh các phiên bản HTTP"></a>IV. So sánh các phiên bản HTTP</h2><table>
+<thead>
+<tr>
+<th>Tiêu chí</th>
+<th>HTTP&#x2F;1.0</th>
+<th>HTTP&#x2F;1.1</th>
+<th>HTTP&#x2F;2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RFC nền tảng</td>
+<td>RFC 1945 (lịch sử)</td>
+<td>RFC 9112 + semantics RFC 9110</td>
+<td>RFC 9113 + semantics RFC 9110</td>
+</tr>
+<tr>
+<td>Hình thức framing</td>
+<td>Header text + CL, response đôi khi đóng kết nối</td>
+<td>Header text + CL&#x2F;TE cho request; response có ngoại lệ</td>
+<td>Binary frames, stream state và END_STREAM</td>
+</tr>
+<tr>
+<td>Kết nối bền bỉ</td>
+<td>Không là mặc định trong triển khai nguyên thủy</td>
+<td>Mặc định hỗ trợ</td>
+<td>Một kết nối có nhiều stream</td>
+</tr>
+<tr>
+<td>Pipelining</td>
+<td>Không là cơ chế nền tảng phổ biến</td>
+<td>Có trong giao thức, ít dùng ở browser</td>
+<td>Multiplexing thay cho pipelining truyền thống</td>
+</tr>
+<tr>
+<td>Điểm liên quan HRS</td>
+<td>Chuyển tiếp sang H1 và xử lý không đồng nhất</td>
+<td>Parser discrepancy, CL.TE&#x2F;TE.CL, CL.0&#x2F;0.CL</td>
+<td>H2.CL, H2.TE, CRLF khi downgrade lỗi</td>
+</tr>
+<tr>
+<td>Rủi ro thực tế</td>
+<td>Phụ thuộc kiến trúc</td>
+<td>Cao nếu chain H1 không đồng nhất</td>
+<td>Vẫn có thể cao khi H2 → H1 thiếu xác thực</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="V-CL-TE-—-Frontend-dung-Content-Length-backend-dung-Transfer-Encoding"><a href="#V-CL-TE-—-Frontend-dung-Content-Length-backend-dung-Transfer-Encoding" class="headerlink" title="V. CL.TE — Frontend dùng Content-Length, backend dùng Transfer-Encoding"></a>V. CL.TE — Frontend dùng Content-Length, backend dùng Transfer-Encoding</h2><h3 id="1-Root-cause"><a href="#1-Root-cause" class="headerlink" title="1. Root cause"></a>1. Root cause</h3><p>Frontend tính độ dài request theo <strong>Content-Length</strong>, còn backend tính theo <strong>chunked</strong>. Header kép là dấu hiệu bất thường; triển khai chuẩn phải xử lý an toàn hoặc đóng kết nối, không giữ trạng thái nhập nhằng.</p>
+<h3 id="2-Vi-du-minh-hoa-ranh-gioi"><a href="#2-Vi-du-minh-hoa-ranh-gioi" class="headerlink" title="2. Ví dụ minh họa ranh giới"></a>2. Ví dụ minh họa ranh giới</h3><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>&lt;CHINH_XAC_THEO_BYTE&gt;</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-nix"><span class="number">0</span></span></span><br><span class="line"><span class="language-nix"></span></span><br><span class="line"><span class="language-nix">GET <span class="symbol">/not-found</span> HTTP<span class="symbol">/1.1</span></span></span><br><span class="line"><span class="language-nix"><span class="params">Host:</span> target.test</span></span><br><span class="line"><span class="language-nix"></span></span><br></pre></td></tr></table></figure>
+
+<p><code>&lt;CHINH_XAC_THEO_BYTE&gt;</code> là <strong>ký hiệu</strong> trong tài liệu, không phải một HTTP header hợp lệ có thể gửi nguyên xi. Khi thử trong Burp, phải thay bằng số byte thực của phần body được frontend bao trùm; nên sử dụng công cụ đo byte chính xác.</p>
+<ul>
+<li>Frontend coi cả đoạn chunk kết thúc và GET phía sau là <strong>body của POST</strong>.</li>
+<li>Backend gặp chunk <code>0\r\n\r\n</code> và coi POST đã hết body.</li>
+<li>GET phía sau có thể là <strong>request mới của backend</strong> nếu parse hợp lệ và kết nối còn mở.</li>
+</ul>
+<p><strong>Không được mặc định</strong> rằng GET sẽ luôn nằm trong TCP buffer “chờ nạn nhân”. Nếu request GET đã hoàn chỉnh, backend có thể xử lý nó ngay, phát sinh response dư. Nếu chỉ là request prefix chưa hoàn chỉnh thì nó có thể đợi thêm byte của request tiếp theo.</p>
+<h3 id="3-Request-prefix-vs-complete-request"><a href="#3-Request-prefix-vs-complete-request" class="headerlink" title="3. Request prefix vs complete request"></a>3. Request prefix vs complete request</h3><p><strong>Prefix chưa hoàn chỉnh</strong> (minh họa):</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET /not-found HTTP/1.1\r\n</span><br><span class="line">X-Trace: partial</span><br></pre></td></tr></table></figure>
+
+<p>Nếu parser còn đợi kết thúc dòng header&#x2F;body, byte của người dùng tiếp theo có thể bị ghép vào đây. Nhưng sự ghép byte đúng hay không phụ thuộc dấu CRLF, header đã có, timeout và validation.</p>
+<p><strong>Complete request:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/not-found</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Nếu backend thực thi độc lập và trả response mà frontend không chờ, trạng thái có thể phát triển thành <strong>response queue poisoning</strong> (§VIII và §XIV).</p>
+<h3 id="4-Tac-dong-co-dieu-kien"><a href="#4-Tac-dong-co-dieu-kien" class="headerlink" title="4. Tác động có điều kiện"></a>4. Tác động có điều kiện</h3><ul>
+<li>Bypass kiểm soát ACL&#x2F;WAF frontend nếu backend nhận request mà frontend không quan sát tương đương.</li>
+<li>Request hijacking &#x2F; response mix-up qua shared upstream connection.</li>
+<li>Cache poisoning khi bộ đệm cache ghi nhận response sai.</li>
+<li>Stored&#x2F;reflected XSS kết hợp response misrouting.</li>
+</ul>
+<p><strong>Một endpoint nội bộ không tự động vượt qua authentication</strong>: backend vẫn có thể áp dụng xác thực và kiểm tra <code>Host</code>, session hoặc mTLS riêng.</p>
+<hr>
+<h2 id="VI-TE-CL-—-Frontend-dung-Transfer-Encoding-backend-dung-Content-Length"><a href="#VI-TE-CL-—-Frontend-dung-Transfer-Encoding-backend-dung-Content-Length" class="headerlink" title="VI. TE.CL — Frontend dùng Transfer-Encoding, backend dùng Content-Length"></a>VI. TE.CL — Frontend dùng Transfer-Encoding, backend dùng Content-Length</h2><h3 id="1-Root-cause-1"><a href="#1-Root-cause-1" class="headerlink" title="1. Root cause"></a>1. Root cause</h3><p>Frontend giải mã chunked, backend lại tuân theo <code>Content-Length</code>. Đây là kết quả của hệ thống không đồng nhất hoặc một header TE bị backend bỏ qua.</p>
+<h3 id="2-Minh-hoa-an-toan-bang-so-do-byte"><a href="#2-Minh-hoa-an-toan-bang-so-do-byte" class="headerlink" title="2. Minh họa an toàn bằng sơ đồ byte"></a>2. Minh họa an toàn bằng sơ đồ byte</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Body do frontend xem là chunked:</span><br><span class="line"></span><br><span class="line">[chunk-size-line: 4 byte] [chunk payload...] [0\r\n\r\n]</span><br><span class="line"></span><br><span class="line">Backend có Content-Length: 4:</span><br><span class="line">[4 byte đầu bị ăn vào body POST] [phần còn lại bắt đầu ở ranh giới khác]</span><br></pre></td></tr></table></figure>
+
+<p>Đây <strong>chỉ là sơ đồ định lượng</strong>. Trong bản thảo gốc, <code>&lt;hex chunk size&gt;</code> được để làm placeholder và <code>Content-Length: 100</code> không được kiểm chứng. Không nên gọi một payload có placeholder hay độ dài chưa tính là “request chuẩn”.</p>
+<p>Nếu thực hành trên lab, phải tự kiểm chứng:</p>
+<ol>
+<li>Dòng chunk-size là số <strong>hex</strong> tương ứng với payload thực.</li>
+<li>Chuỗi kết thúc chunk đúng <code>0\r\n\r\n</code> (hoặc trailer hợp lệ).</li>
+<li>CL của backend đúng số byte được định lấy.</li>
+<li>Request còn lại sau phép cắt có đúng request-line&#x2F;header&#x2F;body hay không.</li>
+<li>Response và reuse state có phù hợp với giả thuyết hay không.</li>
+</ol>
+<h3 id="3-Dieu-thuong-bi-nham"><a href="#3-Dieu-thuong-bi-nham" class="headerlink" title="3. Điều thường bị nhầm"></a>3. Điều thường bị nhầm</h3><p>Khi backend đọc đúng 4 byte đầu, <strong>không có chuyện toàn bộ phần còn lại tự động là một request hoàn chỉnh</strong>. Parser vẫn cần xác thực syntax và xác định body của request tiếp theo. Nếu request kế tiếp có <code>Content-Length</code> lớn hơn số byte hiện có, nó có thể chờ thêm dữ liệu, và chính sự chờ đó có thể hấp thụ request nạn nhân.</p>
+<hr>
+<h2 id="VII-TE-TE-va-header-obfuscation"><a href="#VII-TE-TE-va-header-obfuscation" class="headerlink" title="VII. TE.TE và header obfuscation"></a>VII. TE.TE và header obfuscation</h2><h3 id="1-TE-TE-khong-phai-co-che-framing-thu-ba"><a href="#1-TE-TE-khong-phai-co-che-framing-thu-ba" class="headerlink" title="1. TE.TE không phải cơ chế framing thứ ba"></a>1. TE.TE không phải cơ chế framing thứ ba</h3><p>Trong các tài liệu học về HRS, <strong>TE.TE</strong> là tên nhóm tình huống cả hai bên có hỗ trợ <code>Transfer-Encoding</code>, nhưng <strong>khác nhau ở việc nhận diện hoặc xử lý các biến thể của header</strong>. Sau khi làm rối, kết quả thực chất thường trở về <strong>CL.TE</strong> hoặc <strong>TE.CL</strong>.</p>
+<h3 id="2-Cac-dang-input-bat-thuong-can-nhan-dien"><a href="#2-Cac-dang-input-bat-thuong-can-nhan-dien" class="headerlink" title="2. Các dạng input bất thường cần nhận diện"></a>2. Các dạng input bất thường cần nhận diện</h3><table>
+<thead>
+<tr>
+<th>Mẫu</th>
+<th>Điểm nghiên cứu</th>
+<th>Điều cần thận trọng</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Transfer-Encoding : chunked</code></td>
+<td>Whitespace trước dấu <code>:</code></td>
+<td>Request này <strong>không hợp lệ</strong>; server HTTP&#x2F;1.1 phải 400.</td>
+</tr>
+<tr>
+<td><code>Transfer-Encoding: chunked</code> và <code>Transfer-Encoding: identity</code></td>
+<td>Duplicate&#x2F;giá trị mâu thuẫn</td>
+<td>Không được tự chọn dòng đầu&#x2F;cuối như một parser an toàn.</td>
+</tr>
+<tr>
+<td><code>Transfer-Encoding: xchunked</code></td>
+<td>Token lạ</td>
+<td>Không được xem như <code>chunked</code> chỉ vì có chuỗi con.</td>
+</tr>
+<tr>
+<td><code>Transfer-Encoding: chunkedx</code></td>
+<td>Hậu tố bất thường</td>
+<td>Không phải transfer coding <code>chunked</code> đúng nghĩa.</td>
+</tr>
+<tr>
+<td><code>Transfer-Encoding:\x0bchunked</code></td>
+<td>Ký tự điều khiển</td>
+<td>Không được giả định khoảng trắng kiểu VT là hợp lệ.</td>
+</tr>
+<tr>
+<td>Header continuation với khoảng trắng đầu dòng</td>
+<td>Obsolete line folding (<code>obs-fold</code>)</td>
+<td>RFC 9112 có quy tắc reject hoặc normalize nghiêm ngặt; không mặc định chấp nhận.</td>
+</tr>
+<tr>
+<td>Duplicate <code>Content-Length</code> khác nhau</td>
+<td>Ambiguous framing</td>
+<td>Phải xử lý theo RFC; không cho hai parser diễn giải khác nhau.</td>
+</tr>
+</tbody></table>
+<p>Các ví dụ là <strong>input để kiểm tra sự khác biệt parser trong lab</strong>, không phải tập hợp cú pháp hợp lệ của HTTP.</p>
+<h3 id="3-obs-fold-va-NUL"><a href="#3-obs-fold-va-NUL" class="headerlink" title="3. obs-fold và NUL"></a>3. <code>obs-fold</code> và <code>NUL</code></h3><ul>
+<li><code>obs-fold</code> là cú pháp lịch sử. Đối với request, RFC 9112 yêu cầu bên nhận phải <strong>từ chối hoặc thay thế fold bằng SP trước khi giải nghĩa&#x2F;forward</strong>; không được để hai hop hiểu khác nhau.</li>
+<li>Byte NUL (<code>0x00</code>) có thể dẫn đến bug khi mã xử lý chuỗi viết kém, nhưng <strong>không có quy tắc phổ quát</strong> rằng mọi server C&#x2F;C++ đều cắt HTTP header tại NUL.</li>
+</ul>
+<h3 id="4-Phong-thu"><a href="#4-Phong-thu" class="headerlink" title="4. Phòng thủ"></a>4. Phòng thủ</h3><p>Không “khoan dung” những trường framing mâu thuẫn. Sử dụng parser nhất quán, chặn field-name sai cú pháp, xử lý duplicate CL&#x2F;TE theo chuẩn, tránh forward nguyên vẹn request không hợp lệ vào upstream và đóng kết nối khi không thể tin cậy ranh giới.</p>
+<hr>
+<h2 id="VIII-HTTP-2-downgrading-H2-CL-H2-TE-va-CRLF-injection"><a href="#VIII-HTTP-2-downgrading-H2-CL-H2-TE-va-CRLF-injection" class="headerlink" title="VIII. HTTP&#x2F;2 downgrading: H2.CL, H2.TE và CRLF injection"></a>VIII. HTTP&#x2F;2 downgrading: H2.CL, H2.TE và CRLF injection</h2><h3 id="1-Kien-truc-HTTP-2-→-HTTP-1-1"><a href="#1-Kien-truc-HTTP-2-→-HTTP-1-1" class="headerlink" title="1. Kiến trúc HTTP&#x2F;2 → HTTP&#x2F;1.1"></a>1. Kiến trúc HTTP&#x2F;2 → HTTP&#x2F;1.1</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Client --HTTP/2 (binary frames)--&gt; Frontend</span><br><span class="line">Frontend --HTTP/1.1 (text bytes)--&gt; Backend</span><br></pre></td></tr></table></figure>
+
+<p>Frontend phải tái tạo <code>request-line</code>, <code>Host</code>, các regular headers và body khi downgrade. Nếu frontend nhận một HTTP&#x2F;2 message không hợp lệ hoặc dịch sang HTTP&#x2F;1.1 theo cách gây ra mâu thuẫn framing, backend có thể hiểu request khác với frontend.</p>
+<p>HTTP&#x2F;2 bản thân đã có cấu trúc stream và frame rõ ràng; <strong>điểm yếu xuất hiện ở validation&#x2F;translation khi thay đổi biểu diễn</strong>.</p>
+<h3 id="2-H2-CL"><a href="#2-H2-CL" class="headerlink" title="2. H2.CL"></a>2. H2.CL</h3><p><strong>Ý tưởng:</strong> HTTP&#x2F;2 gửi đủ dữ liệu bằng DATA frames và <code>END_STREAM</code>, nhưng frontend downgrade mà vẫn giữ một <code>content-length</code> giả tạo&#x2F;mâu thuẫn, khiến HTTP&#x2F;1.1 backend đọc ít byte hơn.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">HTTP/2 logic (chỉ để minh họa):</span><br><span class="line">:method: POST</span><br><span class="line">:path: /</span><br><span class="line">:scheme: https</span><br><span class="line">:authority: target.test</span><br><span class="line">content-length: 4       &lt;-- khai báo không khớp</span><br><span class="line">DATA: x=1&lt;more-bytes&gt;</span><br><span class="line">END_STREAM</span><br></pre></td></tr></table></figure>
+
+<p>Phần quan trọng:</p>
+<ol>
+<li>Đây là <strong>HTTP&#x2F;2 malformed</strong> nếu tổng độ dài DATA content khác <code>content-length</code>.</li>
+<li>Frontend đúng chuẩn <strong>phải coi thông điệp sai lệch là lỗi</strong>, không được cứ chấp nhận nó như một request hợp lệ.</li>
+<li>H2.CL xảy ra khi frontend <strong>không kiểm tra</strong> hoặc <strong>forward một trường framing sai</strong>, và backend H1 dựa vào CL sai ấy.</li>
+</ol>
+<p>Không nói rằng “HTTP&#x2F;2 tự nhiên chấp nhận body 50 byte dù CL&#x3D;4” như một hành vi hợp lệ của RFC.</p>
+<h3 id="3-H2-TE"><a href="#3-H2-TE" class="headerlink" title="3. H2.TE"></a>3. H2.TE</h3><p>HTTP&#x2F;2 cấm <code>transfer-encoding</code> ở tầng header. Chỉ riêng header <code>te: trailers</code> là ngoại lệ được cho phép.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HTTP/2 logic — CỐ Ý KHÔNG HỢP LỆ:</span><br><span class="line">:method: POST</span><br><span class="line">:scheme: https</span><br><span class="line">:authority: target.test</span><br><span class="line">:path: /</span><br><span class="line">transfer-encoding: chunked</span><br><span class="line">DATA: 0\r\n\r\n...</span><br></pre></td></tr></table></figure>
+
+<p>Nếu frontend sai lầm chuyển tiếp <code>Transfer-Encoding: chunked</code> vào HTTP&#x2F;1.1 request mà backend nhận, backend có thể kết thúc body tại chunk <code>0</code> rồi xem byte sau đó là request khác. Đó là <strong>lỗi của bước validation&#x2F;downgrade</strong>; cần chứng minh qua response thực tế.</p>
+<h3 id="4-HTTP-2-CRLF-injection-va-request-splitting"><a href="#4-HTTP-2-CRLF-injection-va-request-splitting" class="headerlink" title="4. HTTP&#x2F;2 CRLF injection và request splitting"></a>4. HTTP&#x2F;2 CRLF injection và request splitting</h3><p>HTTP&#x2F;2 field được mã hóa bằng HPACK. Điều này <strong>không</strong> có nghĩa field value có thể mang CR&#x2F;LF hợp lệ: RFC 9113 cấm CR (<code>0x0d</code>), LF (<code>0x0a</code>), NUL (<code>0x00</code>).</p>
+<p>Nếu một frontend lỗi vẫn nhận và nối thẳng field value có CRLF vào header HTTP&#x2F;1.1, kẻ tấn công có thể tạo một dòng header giả:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HTTP/2 field (malformed, ví dụ ký hiệu):</span><br><span class="line">foo = bar\r\nX-Injected: yes</span><br></pre></td></tr></table></figure>
+
+<p>Khi dựng HTTP&#x2F;1.1 sai:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"><span class="attribute">foo</span><span class="punctuation">: </span>bar</span><br><span class="line"><span class="attribute">X-Injected</span><span class="punctuation">: </span>yes</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Mức độ nghiêm trọng tăng nếu chuỗi bị chèn tạo được <strong>dòng trống <code>\r\n\r\n</code></strong> và request-line thứ hai. Tuy nhiên request-line thứ hai có được thực thi không còn tùy vị trí chèn, header backend thêm vào, chính sách xác thực và cách xử lý body.</p>
+<h3 id="5-Response-queue-poisoning-RQP"><a href="#5-Response-queue-poisoning-RQP" class="headerlink" title="5. Response queue poisoning (RQP)"></a>5. Response queue poisoning (RQP)</h3><p>RQP là quá trình <strong>frontend ánh xạ response của backend sang sai request</strong> do số lượng&#x2F;thứ tự request mà frontend và backend nhìn thấy không trùng nhau.</p>
+<p><strong>Điều kiện phổ biến của RQP dạng persistent:</strong></p>
+<ol>
+<li>Frontend–backend tái sử dụng kết nối.</li>
+<li>Có thể smuggle một <strong>request thứ hai hoàn chỉnh</strong>, đủ để backend tạo <strong>response riêng</strong>.</li>
+<li>Phản hồi không khiến kết nối bị đóng ngay.</li>
+<li>Frontend không loại bỏ response ngoài dự kiến, dẫn tới lệch hàng đợi.</li>
+</ol>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Frontend cho rằng:         [Attacker Req A]        [Victim Req B]</span><br><span class="line">Frontend mong response:     [Res A]                [Res B]</span><br><span class="line"></span><br><span class="line">Backend thực sự nhận:       [Req A] [Req X (hidden)] [Req B]</span><br><span class="line">Backend tạo response:       [Res A] [Res X]          [Res B]</span><br><span class="line"></span><br><span class="line">Mapping có thể xảy ra:      Attacker &lt;- Res A</span><br><span class="line">                            Victim   &lt;- Res X</span><br><span class="line">                            Res B còn lại chờ request sau</span><br></pre></td></tr></table></figure>
+
+<p><strong>Phân biệt hai kiểu hậu quả:</strong></p>
+<ul>
+<li><strong>Request prefix poisoning:</strong> Backend thấy một request chưa hoàn chỉnh, byte của nạn nhân bị gắn vào request đó. Không nhất thiết có response dư tồn đọng.</li>
+<li><strong>Response queue poisoning:</strong> Backend xử lý một request ẩn <strong>hoàn chỉnh</strong> và phát sinh <strong>response riêng</strong>, làm frontend lệch việc ghép response theo thứ tự.</li>
+</ul>
+<p>Nếu attacker đẩy cả body chưa hoàn chỉnh hoặc dữ liệu dư không hợp lệ vào kết nối, backend có thể trả 400&#x2F;đóng socket, khiến poisoning không tồn tại lâu.</p>
+<h3 id="6-Phong-thu-voi-HTTP-2-downgrading"><a href="#6-Phong-thu-voi-HTTP-2-downgrading" class="headerlink" title="6. Phòng thủ với HTTP&#x2F;2 downgrading"></a>6. Phòng thủ với HTTP&#x2F;2 downgrading</h3><ul>
+<li>Ưu tiên HTTP&#x2F;2 <strong>end-to-end</strong> trong chuỗi proxy–backend nếu triển khai và chính sách cho phép.</li>
+<li>Nếu phải downgrade, dựng request H1 từ cấu trúc đã xác thực: loại bỏ field connection-specific, chặn CR&#x2F;LF&#x2F;NUL, kiểm tra <code>content-length</code> khớp DATA, không đưa tên trường sai cú pháp xuống backend.</li>
+<li>Từ chối các request gây mơ hồ; khi không thể xác định framing, đóng kết nối upstream thay vì tái sử dụng.</li>
+<li>Không coi chỉ đóng connection pooling là biện pháp duy nhất: <strong>request tunnelling</strong> vẫn có thể gây hại.</li>
+</ul>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced">PortSwigger Advanced Request Smuggling</a>, <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning">Response Queue Poisoning</a>.</p>
+<hr>
+<h2 id="IX-CL-0-va-H2-0"><a href="#IX-CL-0-va-H2-0" class="headerlink" title="IX. CL.0 và H2.0"></a>IX. CL.0 và H2.0</h2><h3 id="1-CL-0-la-gi"><a href="#1-CL-0-la-gi" class="headerlink" title="1. CL.0 là gì?"></a>1. CL.0 là gì?</h3><p><strong>CL.0</strong> trong mô hình server-side kinh điển:</p>
+<ul>
+<li><strong>Frontend:</strong> Dùng <code>Content-Length</code>, hiểu request có body.</li>
+<li><strong>Backend:</strong> Trong một đường xử lý cụ thể, bỏ qua phần body hoặc kết thúc request ngay sau header, dù CL đã chỉ ra body khác 0.</li>
+</ul>
+<p>Khi đó, dữ liệu frontend coi là body có thể được parser backend hiểu thành request tiếp theo.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Frontend: [POST headers | GET /hidden... (body)]</span><br><span class="line">Backend:  [POST headers] [GET /hidden... (request mới)]</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Vi-du-minh-hoa"><a href="#2-Vi-du-minh-hoa" class="headerlink" title="2. Ví dụ minh họa"></a>2. Ví dụ minh họa</h3><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/resources/static.svg</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>&lt;ACTUAL_BODY_LENGTH&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-http"><span class="keyword">GET</span> <span class="string">/not-found</span> <span class="meta">HTTP/1.1</span></span></span><br><span class="line"><span class="language-http"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span></span><br><span class="line"><span class="language-http"></span></span><br></pre></td></tr></table></figure>
+
+<p>Để thực nghiệm có ý nghĩa, thay <code>&lt;ACTUAL_BODY_LENGTH&gt;</code> bằng số byte chính xác của body. Endpoint <code>.svg</code> là <strong>ứng viên</strong> để thử; <strong>không phải mọi static resource đều bỏ qua body</strong>.</p>
+<p>Frontend có thể gửi body như một phần POST; nếu backend xem POST đã kết thúc và <strong>giữ kết nối mở</strong>, GET phía sau có khả năng được đọc thành request mới.</p>
+<h3 id="3-Dieu-kien-phai-chung-minh"><a href="#3-Dieu-kien-phai-chung-minh" class="headerlink" title="3. Điều kiện phải chứng minh"></a>3. Điều kiện phải chứng minh</h3><ol>
+<li>Backend có <strong>thực sự không tiêu thụ body</strong> theo CL không?</li>
+<li>Backend <strong>giữ kết nối mở</strong> sau response không?</li>
+<li>Frontend có <strong>forward body</strong> như giả thuyết không?</li>
+<li>Request bị tách có <strong>đủ cú pháp</strong> để tạo response độc lập không?</li>
+<li>Phản hồi tiếp theo có phản ánh ranh giới bị lệch hay chỉ là error&#x2F;redirect bình thường?</li>
+</ol>
+<p><strong>200 OK trả nhanh</strong> một mình chỉ chứng minh server có thể trả lời nhanh. Nó <strong>không chứng minh CL.0</strong>; server hoàn toàn có thể đã đọc đủ body trước khi trả 200, hoặc trả 200 trước rồi vẫn tiếp tục tiêu thụ body.</p>
+<h3 id="4-H2-0"><a href="#4-H2-0" class="headerlink" title="4. H2.0"></a>4. H2.0</h3><p><strong>H2.0</strong> là biến thể CL.0 khi đầu vào client–frontend là HTTP&#x2F;2, frontend tạo request HTTP&#x2F;1.1 với body&#x2F;<code>Content-Length</code> hợp lệ, nhưng backend lại bỏ qua body trong một luồng xử lý. Nó khác H2.CL:</p>
+<table>
+<thead>
+<tr>
+<th>Kỹ thuật</th>
+<th>Sai khác trọng tâm</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>H2.CL</td>
+<td>HTTP&#x2F;2 content length &#x2F; downgrade tạo <strong>CL sai</strong>, backend H1 tin vào CL ấy.</td>
+</tr>
+<tr>
+<td>H2.0</td>
+<td>Backend <strong>bỏ qua body</strong>, dù frontend H2 đã tạo&#x2F;forward body H1 đúng cách.</td>
+</tr>
+</tbody></table>
+<h3 id="5-Early-response-khong-dong-nghia-CL-0"><a href="#5-Early-response-khong-dong-nghia-CL-0" class="headerlink" title="5. Early response không đồng nghĩa CL.0"></a>5. Early response không đồng nghĩa CL.0</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Tình huống A:</span><br><span class="line">Backend trả response sớm -&gt; tiếp tục bỏ/đọc đủ CL bytes -&gt; request sau vẫn đồng bộ.</span><br><span class="line"></span><br><span class="line">Tình huống B:</span><br><span class="line">Backend trả response sớm -&gt; dừng xử lý body, giữ connection -&gt; byte body thành request mới.</span><br></pre></td></tr></table></figure>
+
+<p>Tình huống A là <strong>early response an toàn về framing</strong> nếu parser quản lý state chính xác; tình huống B có thể là CL.0. Không thể phân biệt chỉ qua status 200.</p>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/browser">PortSwigger Browser-Powered Request Smuggling</a>.</p>
+<hr>
+<h2 id="X-0-CL-early-response-va-double-desync"><a href="#X-0-CL-early-response-va-double-desync" class="headerlink" title="X. 0.CL, early response và double-desync"></a>X. 0.CL, early response và double-desync</h2><p>Đây là phần trọng tâm được làm rõ từ bản thảo gốc và các thử nghiệm PortSwigger.</p>
+<h3 id="1-Ban-chat-0-CL-khong-phai-CL-0"><a href="#1-Ban-chat-0-CL-khong-phai-CL-0" class="headerlink" title="1. Bản chất 0.CL (không phải CL.0)"></a>1. Bản chất 0.CL (không phải CL.0)</h3><p><strong>0.CL</strong> có chiều sai khác ngược lại CL.0:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Frontend</th>
+<th>Backend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0.CL</td>
+<td>Coi body dài <strong>0</strong> vì không nhận diện CL</td>
+<td>Nhận diện CL, cho rằng còn <strong>N byte body</strong></td>
+</tr>
+<tr>
+<td>CL.0</td>
+<td>Nhận diện CL và chuyển body</td>
+<td>Coi body dài <strong>0</strong> &#x2F; bỏ qua body trong một code path</td>
+</tr>
+</tbody></table>
+<p>Ví dụ header không hợp lệ nhưng có thể kích hoạt parser differential trong lab:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/resources/images/blog.svg</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.test</span><br><span class="line">Content-Length : 57</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>Content-Length : 57</code> có dấu cách <strong>trước</strong> dấu hai chấm. Theo RFC 9112, request này phải bị server từ chối với 400. Nếu frontend chỉ bỏ qua nó nhưng backend lại chấp nhận, đây chính là bất đồng để nghiên cứu <strong>0.CL</strong>.</p>
+<p><strong>Không có quy tắc rằng thêm GET tự tạo lỗi 0.CL.</strong> GET là phương thức HTTP; parser bug là ở cách nhận diện framing&#x2F;header hoặc một trạng thái xử lý đặc biệt.</p>
+<h3 id="2-Vi-sao-co-0-CL-deadlock"><a href="#2-Vi-sao-co-0-CL-deadlock" class="headerlink" title="2. Vì sao có 0.CL deadlock?"></a>2. Vì sao có 0.CL deadlock?</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Frontend: R1 body = 0, đã forward header -&gt; chờ Response 1</span><br><span class="line">Backend:  R1 body = N, còn thiếu N byte  -&gt; chờ body</span><br></pre></td></tr></table></figure>
+
+<p>Nếu frontend không gửi request tiếp theo xuống backend trước khi nhận response của R1 thì hai phía chờ nhau. Một lần timeout ở đây có thể là dấu hiệu nhưng <strong>chưa phải xác nhận khai thác</strong>. Các hệ thống khác nhau có thể gửi sớm, buffer, reject hoặc close khác nhau.</p>
+<h3 id="3-Early-response-gadget-giai-quyet-dieu-gi"><a href="#3-Early-response-gadget-giai-quyet-dieu-gi" class="headerlink" title="3. Early-response gadget giải quyết điều gì?"></a>3. Early-response gadget giải quyết điều gì?</h3><p><strong>Early-response gadget</strong> là đường xử lý backend có thể gửi response <strong>trước khi nhận đủ body</strong>. Có thể gặp trên static resource, redirect hoặc một số lỗi server-level, nhưng phải kiểm tra từng hệ thống.</p>
+<p>Chuỗi trạng thái lý tưởng:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">t0  Frontend forward header R1 có CL bị ẩn đối với frontend.</span><br><span class="line">t1  Backend đọc header: R1 còn thiếu N byte.</span><br><span class="line">t2  Backend gửi Response 1 sớm, kết nối vẫn mở.</span><br><span class="line">t3  Frontend nhận Response 1 và cho phép Request 2 đi tiếp.</span><br><span class="line">t4  Backend còn nghĩa vụ tiêu thụ N byte body của R1.</span><br><span class="line">t5  N byte đầu của Request 2 bị &#x27;ăn&#x27; vào body của R1.</span><br></pre></td></tr></table></figure>
+
+<p>Ở <strong>t4</strong>, backend <strong>chưa chắc đã bỏ qua Content-Length</strong>. Đây chính là khác biệt lớn nhất giữa 0.CL + early response và CL.0 thông thường.</p>
+<h3 id="4-Double-desync-0-CL-→-trang-thai-CL-0-like"><a href="#4-Double-desync-0-CL-→-trang-thai-CL-0-like" class="headerlink" title="4. Double-desync: 0.CL → trạng thái CL.0-like"></a>4. Double-desync: 0.CL → trạng thái CL.0-like</h3><p><strong>Mô hình minh họa byte-exact đã kiểm tra:</strong></p>
+<h4 id="Request-A-—-tao-0-CL"><a href="#Request-A-—-tao-0-CL" class="headerlink" title="Request A — tạo 0.CL"></a>Request A — tạo 0.CL</h4><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/resources/NUL</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.com</span><br><span class="line">Content-Length : 57</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Frontend: Không nhận CL, R1 body &#x3D; 0.</li>
+<li>Backend: Nhận CL&#x3D;57, có thể trả response sớm và vẫn chờ&#x2F;tiêu thụ 57 byte.</li>
+<li><code>/resources/NUL</code> chỉ là <strong>ví dụ về gadget phụ thuộc nền tảng</strong>; không mặc định hợp lệ trên mọi máy chủ.</li>
+</ul>
+<h4 id="Request-B-—-phan-dau-bi-backend-tieu-thu-phan-sau-tro-thanh-request-moi"><a href="#Request-B-—-phan-dau-bi-backend-tieu-thu-phan-sau-tro-thanh-request-moi" class="headerlink" title="Request B — phần đầu bị backend tiêu thụ, phần sau trở thành request mới"></a>Request B — phần đầu bị backend tiêu thụ, phần sau trở thành request mới</h4><figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>target.com</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>41</span><br><span class="line"></span><br><span class="line"><span class="language-http"><span class="keyword">GET</span> <span class="string">/admin</span> <span class="meta">HTTP/1.1</span></span></span><br><span class="line"><span class="language-http"><span class="attribute">Host</span><span class="punctuation">: </span>target.com</span></span><br><span class="line"><span class="language-http"></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Kiểm tra byte với CRLF và hostname chính xác <code>target.com</code>:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dữ liệu</th>
+<th align="right">Độ dài</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST / HTTP/1.1\r\n</code></td>
+<td align="right">17</td>
+</tr>
+<tr>
+<td><code>Host: target.com\r\n</code></td>
+<td align="right">18</td>
+</tr>
+<tr>
+<td><code>Content-Length: 41\r\n</code></td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>Dòng trắng <code>\r\n</code></td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td><strong>Tổng header POST</strong></td>
+<td align="right"><strong>57</strong></td>
+</tr>
+<tr>
+<td><code>GET /admin HTTP/1.1\r\nHost: target.com\r\n\r\n</code></td>
+<td align="right"><strong>41</strong></td>
+</tr>
+</tbody></table>
+<p>Nếu frontend forward đúng 57 byte header và 41 byte body như trên:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Frontend: R1 = GET /resources/NUL body 0</span><br><span class="line">          R2 = POST / body 41 (chứa &#x27;GET /admin...&#x27;)</span><br><span class="line"></span><br><span class="line">Backend:  R1 = GET /resources/NUL body 57</span><br><span class="line">                   ^ lấy đúng 57 byte header POST của R2</span><br><span class="line">          R2&#x27; = GET /admin</span><br></pre></td></tr></table></figure>
+
+<p>Đây là ý tưởng <strong>Double-Desync</strong>: lần lệch thứ nhất khiến request B bị cắt phần đầu, từ đó những byte thuộc <strong>body B ở frontend</strong> lại trở thành <strong>request độc lập ở backend</strong>.</p>
+<p><strong>Ba giới hạn quan trọng của ví dụ:</strong></p>
+<ol>
+<li>Frontend thường <strong>thêm, xóa hoặc viết lại header</strong> trước khi gửi upstream; 57 byte có thể không còn là toàn bộ header POST.</li>
+<li>Proxy có thể giới hạn kết nối, chặn request lỗi hoặc không cho tiếp tục gửi trong trạng thái ấy.</li>
+<li><code>GET /admin</code> thành request mới <strong>chưa đồng nghĩa</strong> vượt xác thực hoặc đầu độc response của nạn nhân.</li>
+</ol>
+<p>Nghiên cứu gốc gọi cách chuyển từ 0.CL sang trạng thái CL.0-like này là <em>double-desync</em>. Không có chuyện backend thay đổi vĩnh viễn quy tắc <code>Content-Length</code>; <strong>ranh giới của luồng byte bị dời</strong>.</p>
+<h3 id="5-Tu-Double-Desync-toi-Response-Queue-Poisoning-trong-lab-0-CL"><a href="#5-Tu-Double-Desync-toi-Response-Queue-Poisoning-trong-lab-0-CL" class="headerlink" title="5. Từ Double-Desync tới Response Queue Poisoning trong lab 0.CL"></a>5. Từ Double-Desync tới Response Queue Poisoning trong lab 0.CL</h3><p>Trong lab PortSwigger, mục tiêu không chỉ là làm backend đọc một request ẩn. Mục tiêu là <strong>trình duyệt Carlos thực thi JavaScript <code>alert()</code></strong>. Một chuỗi khai thác được mô tả trong các write-up là:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[0.CL: parser differential]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[Early response: cho request tiếp tục đi xuống]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[Double-desync: Request B bị cắt phần đầu]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[Backend thấy request ẩn độc lập]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[Response dư / mapping response sai]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[Carlos nhận response chứa HTML phản chiếu payload XSS]</span><br><span class="line">            |</span><br><span class="line">            v</span><br><span class="line">[JavaScript alert() chạy trong browser của Carlos]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Vai trò của các thành phần</strong> trong những walkthrough:</p>
+<ul>
+<li><code>stage1</code> &#x2F; <code>earlyresponse</code>: Request có malformed <code>Content-Length</code>, tạo 0.CL và mở đường cho response sớm.</li>
+<li><code>stage2_chopped</code> &#x2F; <code>CL0_chopped</code>: Phần đầu Request B <strong>dự kiến bị backend tiêu thụ thành body R1</strong>.</li>
+<li><code>stage2_revealed</code> &#x2F; <code>CL0_revealed</code>: Byte đầu tiên còn lại sau khi backend tiêu thụ phần chopped; thường mở request mới.</li>
+<li><code>smuggled</code>: Request&#x2F;đoạn dữ liệu tạo response chứa payload mong muốn.</li>
+<li><code>victim</code>: Request mô phỏng người dùng để kiểm chứng mapping response; không phải lúc nào cũng là request thực của Carlos.</li>
+</ul>
+<p>Trong một số cấu hình, tác giả dùng endpoint blog phản chiếu <code>User-Agent</code> vào HTML mà không escape đủ. Tự gửi request đó chỉ là <strong>self-XSS &#x2F; phản chiếu trong response của attacker</strong>; kết hợp RQP có thể làm response ấy được chuyển cho nạn nhân.</p>
+<p><strong>Không nên đồng nhất</strong> một lần thấy <code>200 OK</code> của file JavaScript, một lần thấy <code>404</code>, một marker response bị đổi, và trạng thái <strong>Lab Solved</strong>. Chúng là các tầng chứng cứ khác nhau.</p>
+<p>Nguồn đối chiếu:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://portswigger.net/research/http1-must-die">James Kettle — HTTP&#x2F;1.1 Must Die (2025)</a></li>
+<li><a target="_blank" rel="noopener" href="https://portswigger.net/blog/http-1-1-must-die-conquering-the-0-cl-challenge">PortSwigger Blog — Conquering the 0.CL Challenge (2026)</a></li>
+<li><a target="_blank" rel="noopener" href="https://nicolovinci.com/posts/0cl/">Nicolò Vinci — 0.CL PortSwigger Lab Solutions</a></li>
+<li><a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-0cl-request-smuggling">PortSwigger 0.CL lab</a></li>
+</ul>
+<h3 id="6-Phep-thu-xac-dinh-backend-con-tieu-thu-body-sau-early-response"><a href="#6-Phep-thu-xac-dinh-backend-con-tieu-thu-body-sau-early-response" class="headerlink" title="6. Phép thử xác định backend còn tiêu thụ body sau early response"></a>6. Phép thử xác định backend còn tiêu thụ body sau early response</h3><p>Trong <strong>lab được phép kiểm thử</strong>, giả sử backend được cho là tiếp tục đọc 1 byte từ body R1:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/resources/labheader/js/labHeader.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>&lt;LAB_HOST&gt;</span><br><span class="line">Content-Length : 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Sau đó gửi trên một đường dẫn có khả năng tái sử dụng <strong>cùng kết nối backend</strong>:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">XGET</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>&lt;LAB_HOST&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>Giả thuyết kiểm tra:</strong> nếu backend ăn chữ <code>X</code> vào body R1, byte kế tiếp bắt đầu tại <code>GET / HTTP/1.1</code>. Nếu backend thực sự đã bỏ body và coi request mới bắt đầu tại <code>XGET</code>, tình huống khác sẽ xảy ra.</p>
+<p>Nhưng để kết luận phải quan sát:</p>
+<ul>
+<li>Cách Burp gửi từng request (cùng kết nối client hay riêng, frontend có forward thế nào).</li>
+<li>Response ứng với request nào; status 200 đơn thuần không đủ.</li>
+<li>Có <code>Connection: close</code>, timeout, redirect hoặc ngắt kết nối không.</li>
+<li>Phản hồi có tái lập được trên instance sạch không.</li>
+</ul>
+<h3 id="7-Truong-hop-payload-gop-da-tung-quan-sat-Content-Length-212"><a href="#7-Truong-hop-payload-gop-da-tung-quan-sat-Content-Length-212" class="headerlink" title="7. Trường hợp payload gộp đã từng quan sát: Content-Length : 212"></a>7. Trường hợp payload gộp đã từng quan sát: <code>Content-Length : 212</code></h3><p>Trong thí nghiệm của tác giả với PortSwigger lab, request ban đầu là POST đến <code>labHeader.js</code> và phần dữ liệu sau dòng trống mở bằng <code>GET /post?postId=10</code> với payload XSS trong <code>User-Agent</code>.</p>
+<p>Khi giữ <strong>đúng hostname và byte CRLF của ảnh thí nghiệm</strong>, phần <code>GET ...</code> đến <code>x=</code> có thể dài <strong>212 byte</strong>. Nếu backend thật sự hiểu <code>Content-Length : 212</code> và đọc đủ body, nó phải tiêu thụ cả khối GET đó vào body POST. Khi ấy <strong>không thể suy ra GET đã chạy như request độc lập</strong> chỉ vì nhận response 200 của <code>labHeader.js</code>.</p>
+<p>Có ít nhất bốn giả thuyết khác nhau cần tách bạch:</p>
+<ol>
+<li>Backend chấp nhận CL và tiêu thụ body; <code>200 OK</code> chỉ là response cho file <code>.js</code>.</li>
+<li>Backend trả response sớm nhưng <strong>vẫn</strong> tiếp tục tiêu thụ body theo CL.</li>
+<li>Một code path&#x2F;edge proxy thực sự bỏ body hoặc thay đổi request, gây ra ranh giới khác lý thuyết.</li>
+<li>Lab Solved là tác động từ một request&#x2F;kết nối&#x2F;attempt khác hoặc response race; <strong>chưa chắc payload vừa gửi</strong> là nguyên nhân duy nhất.</li>
+</ol>
+<p><strong>Cách chứng minh mạnh hơn:</strong> Khởi tạo lab sạch; ghi lại raw bytes thực sự đi qua mỗi hop (nếu có), gửi duy nhất một thí nghiệm; chụp request group, response order, connection-reuse và trạng thái Solved; lặp lại với các giá trị CL lệch ±1. Nếu không kiểm soát được frontend, kết luận nên dừng ở <strong>“quan sát được Solved, cơ chế chính xác chưa được xác minh”</strong>.</p>
+<p>Không nên viết: <em>“Backend tự đưa body thành request mới trong TCP buffer vì trả response sớm”</em> — đây là một suy luận chưa được chứng minh.</p>
+<hr>
+<h2 id="XI-Client-Side-Desync-CSD"><a href="#XI-Client-Side-Desync-CSD" class="headerlink" title="XI. Client-Side Desync (CSD)"></a>XI. Client-Side Desync (CSD)</h2><h3 id="1-Khac-biet-voi-server-side-request-smuggling"><a href="#1-Khac-biet-voi-server-side-request-smuggling" class="headerlink" title="1. Khác biệt với server-side request smuggling"></a>1. Khác biệt với server-side request smuggling</h3><p>Trong HRS server-side, <strong>frontend và backend</strong> diễn giải request khác nhau. Trong <strong>Client-Side Desync</strong>, <strong>browser và web server</strong> có thể không thống nhất về ranh giới request trên kết nối <strong>browser ↔ target</strong>, kể cả khi phía server chỉ có một thành phần xử lý.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Server-side: [Attacker] -&gt; [Frontend] ==DESYNC==&gt; [Backend] &lt;- [Victim]</span><br><span class="line"></span><br><span class="line">Client-side: [Attacker&#x27;s page] -&gt; [Victim browser] ==DESYNC==&gt; [Target server]</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Co-che-pho-bien"><a href="#2-Co-che-pho-bien" class="headerlink" title="2. Cơ chế phổ biến"></a>2. Cơ chế phổ biến</h3><ol>
+<li>Trình duyệt nạn nhân chạy JavaScript từ một trang của attacker.</li>
+<li>Script khiến trình duyệt gửi request sang website có endpoint CL.0.</li>
+<li>Target trả response mà không tiêu thụ đúng body, <strong>vẫn để kết nối mở</strong>.</li>
+<li>Byte body của request đầu ở phía server có khả năng bị phân tích cùng request tiếp theo của <strong>cùng trình duyệt nạn nhân</strong>.</li>
+</ol>
+<p>Điểm quyết định: trình duyệt phải <strong>tái sử dụng đúng kết nối</strong> đã bị poison. Nếu browser chọn HTTP&#x2F;2, tạo connection mới, hoặc server đóng connection sau response thì hướng khai thác có thể thất bại.</p>
+<h3 id="3-Vi-du-JavaScript-mo-hinh-thu-nghiem"><a href="#3-Vi-du-JavaScript-mo-hinh-thu-nghiem" class="headerlink" title="3. Ví dụ JavaScript (mô hình thử nghiệm)"></a>3. Ví dụ JavaScript (mô hình thử nghiệm)</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Minh họa ý tưởng, KHÔNG phải exploit dùng được ở mọi browser/target.</span></span><br><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;https://target.test/cl0-endpoint&#x27;</span>, &#123;</span><br><span class="line">  <span class="attr">method</span>: <span class="string">&#x27;POST&#x27;</span>,</span><br><span class="line">  <span class="attr">mode</span>: <span class="string">&#x27;no-cors&#x27;</span>,</span><br><span class="line">  <span class="attr">credentials</span>: <span class="string">&#x27;include&#x27;</span>,</span><br><span class="line">  <span class="attr">body</span>: <span class="string">&#x27;GET /not-found HTTP/1.1\r\nHost: target.test\r\nX-Test: x&#x27;</span></span><br><span class="line">&#125;).<span class="title function_">then</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  <span class="variable language_">window</span>.<span class="property">location</span> = <span class="string">&#x27;https://target.test/home&#x27;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Các hạn chế cần bổ sung so với bản thảo cũ:</strong></p>
+<ul>
+<li><code>mode: &#39;no-cors&#39;</code> <strong>không phải nút tắt mọi cơ chế cross-origin</strong>. Nó giới hạn method&#x2F;header mà script được phép đặt và trả một <em>opaque response</em>; cookie còn chịu SameSite, quy tắc third-party cookie và chính sách trình duyệt.</li>
+<li><code>credentials: &#39;include&#39;</code> yêu cầu gửi credentials nếu được phép, <strong>không bảo đảm</strong> việc browser có một “with-credentials pool” chung có thể luôn tái sử dụng hay cookie chắc chắn được gửi.</li>
+<li><code>fetch().then(...)</code> <strong>không bảo đảm</strong> điều hướng sẽ đi trên chính socket của <code>fetch</code>.</li>
+<li>JavaScript trong browser <strong>không thể tự do đặt Host, Content-Length, Connection</strong> như trong Burp Repeater; đây là nhóm forbidden&#x2F;request-controlled headers.</li>
+<li>Đường đi cần tương thích với khả năng browser tạo ra trong thực tế, không chỉ với raw socket.</li>
+<li>Nhiều trình duyệt ưu tiên HTTP&#x2F;2 nếu server có hỗ trợ; vì vậy CSD qua HTTP&#x2F;1.1 thường cần target&#x2F;đường đi không dùng HTTP&#x2F;2 hoặc có hoàn cảnh proxy đặc biệt.</li>
+</ul>
+<h3 id="4-Phan-biet-early-response-va-CSD-thuc-su"><a href="#4-Phan-biet-early-response-va-CSD-thuc-su" class="headerlink" title="4. Phân biệt early response và CSD thực sự"></a>4. Phân biệt early response và CSD thực sự</h3><p>Một request có CL lớn hơn lượng body thật mà vẫn trả response nhanh là <strong>ứng viên</strong>. Phải tiếp tục xác nhận bằng hai request trên cùng kết nối, kiểm tra phản hồi khác biệt và trạng thái keep-alive. Một server gửi response sớm rồi <strong>đọc tiếp body đúng CL</strong> là cách xử lý khác với CL.0.</p>
+<h3 id="5-Phong-thu"><a href="#5-Phong-thu" class="headerlink" title="5. Phòng thủ"></a>5. Phòng thủ</h3><ul>
+<li>Luôn tiêu thụ&#x2F;loại bỏ body đúng framing trước khi giữ connection cho request kế tiếp.</li>
+<li>Khi không thể tiêu thụ body an toàn, <strong>đóng kết nối</strong> và không reuse.</li>
+<li>Đừng giả định request tới file tĩnh&#x2F;redirect không thể có body.</li>
+<li>Sử dụng HTTP&#x2F;2 đúng chuẩn ở browser–target khi có thể; vẫn cần rà soát tầng downgrade của backend.</li>
+</ul>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/browser/client-side-desync">PortSwigger — Client-side desync attacks</a>.</p>
+<hr>
+<h2 id="XII-Pause-Based-Desync"><a href="#XII-Pause-Based-Desync" class="headerlink" title="XII. Pause-Based Desync"></a>XII. Pause-Based Desync</h2><h3 id="1-Mo-hinh"><a href="#1-Mo-hinh" class="headerlink" title="1. Mô hình"></a>1. Mô hình</h3><p><strong>Pause-based desync</strong> khai thác sự khác biệt theo <strong>thời điểm</strong> xử lý request, không nhất thiết dựa trên một cặp header CL&#x2F;TE mâu thuẫn. Attacker gửi header có CL lớn, <strong>tạm dừng</strong> chưa gửi body, khiến backend phản hồi&#x2F;timeout&#x2F;redirect trước khi nhận đủ nội dung. Nếu backend kết thúc request nhưng không đóng kết nối, body gửi tiếp có thể bị hiểu là request mới (CL.0-like).</p>
+<h3 id="2-Dieu-kien-can-kiem-tra"><a href="#2-Dieu-kien-can-kiem-tra" class="headerlink" title="2. Điều kiện cần kiểm tra"></a>2. Điều kiện cần kiểm tra</h3><ul>
+<li>Frontend stream header&#x2F;body tới backend khi request chưa đủ body (hoặc cho phép dữ liệu đi từng phần).</li>
+<li>Backend có đường xử lý phản hồi sớm sau khi bị pause.</li>
+<li>Sau phản hồi, backend <strong>không còn tiêu thụ phần body cũ</strong> nhưng vẫn giữ connection mở.</li>
+<li>Frontend tiếp tục chuyển body còn lại xuống cùng upstream connection.</li>
+</ul>
+<h3 id="3-Timeline-minh-hoa"><a href="#3-Timeline-minh-hoa" class="headerlink" title="3. Timeline minh họa"></a>3. Timeline minh họa</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">t0: Attacker -&gt; Frontend: headers + Content-Length: N</span><br><span class="line">    Frontend -&gt; Backend: headers (chưa có body)</span><br><span class="line"></span><br><span class="line">t1: Attacker tạm ngừng gửi body.</span><br><span class="line"></span><br><span class="line">t2: Backend phát response/redirect/error và có thể chuyển trạng thái request.</span><br><span class="line"></span><br><span class="line">t3: Attacker gửi N byte body.</span><br><span class="line"></span><br><span class="line">t4: Frontend nghĩ đó vẫn là body request đầu.</span><br><span class="line">    Backend có thể xem những byte này là request mới NẾU đã bỏ state body.</span><br></pre></td></tr></table></figure>
+
+<p><strong>Không có con số pause cố định đúng cho mọi hệ thống</strong>. <code>61 giây</code> trong một ví dụ là giá trị phụ thuộc timeout thực tế; không nên dùng như quy tắc phổ quát.</p>
+<h3 id="4-Vi-du-lich-su-Apache-CVE-2022-22720"><a href="#4-Vi-du-lich-su-Apache-CVE-2022-22720" class="headerlink" title="4. Ví dụ lịch sử: Apache CVE-2022-22720"></a>4. Ví dụ lịch sử: Apache CVE-2022-22720</h3><p>Apache HTTP Server <strong>2.4.52 và cũ hơn</strong> có lỗi không đóng inbound connection trong một số tình huống phát sinh lỗi khi loại bỏ request body; điều này có thể tạo điều kiện request smuggling. Apache ghi nhận đã <strong>khắc phục ở 2.4.53</strong>.</p>
+<p>Cần phân biệt CVE này với mọi redirect Apache nói chung. Không được viết: <em>“Apache 2.4.52 tự động bị smuggling khi gửi POST &#x2F;resources và chờ 61 giây”</em>. Cần đúng code path, cấu hình và tình huống đóng&#x2F;mở kết nối.</p>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://httpd.apache.org/security/vulnerabilities_24.html">Apache HTTP Server security advisories — CVE-2022-22720</a>, <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync">PortSwigger — Pause-based desync</a>.</p>
+<hr>
+<h2 id="XIII-Request-Tunnelling"><a href="#XIII-Request-Tunnelling" class="headerlink" title="XIII. Request Tunnelling"></a>XIII. Request Tunnelling</h2><h3 id="1-Smuggling-so-voi-tunnelling"><a href="#1-Smuggling-so-voi-tunnelling" class="headerlink" title="1. Smuggling so với tunnelling"></a>1. Smuggling so với tunnelling</h3><p><strong>Request tunnelling</strong> là khả năng khiến một request có vẻ đơn lẻ với frontend được backend phân tích thành <strong>nhiều request</strong>, rồi tương tác với response ẩn trên <strong>chính kết nối&#x2F;stream của attacker</strong>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Request smuggling truyền thống</th>
+<th>Request tunnelling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cần chung kết nối với nạn nhân?</td>
+<td>Thường có trong mục tiêu cross-user</td>
+<td><strong>Không</strong> nhất thiết</td>
+</tr>
+<tr>
+<td>Mục tiêu</td>
+<td>Poison request&#x2F;response kế tiếp</td>
+<td>Vượt frontend, đọc response hoặc thực hiện request ẩn</td>
+</tr>
+<tr>
+<td>Mức độ nhìn thấy response thứ hai</td>
+<td>Phụ thuộc queue và reuse</td>
+<td>Blind hoặc non-blind</td>
+</tr>
+<tr>
+<td>H2 downgrading</td>
+<td>Có thể liên quan</td>
+<td>Là một bề mặt quan trọng</td>
+</tr>
+</tbody></table>
+<p>Không viết rằng mọi tunnelling đều bắt buộc frontend “đóng kết nối backend ngay sau mỗi request”. Ý đúng hơn: tunnelling <strong>vẫn khai thác được trong trường hợp không có connection reuse giữa các người dùng</strong>.</p>
+<h3 id="2-Tunnelling-qua-chuyen-doi-HTTP-2-→-HTTP-1-1"><a href="#2-Tunnelling-qua-chuyen-doi-HTTP-2-→-HTTP-1-1" class="headerlink" title="2. Tunnelling qua chuyển đổi HTTP&#x2F;2 → HTTP&#x2F;1.1"></a>2. Tunnelling qua chuyển đổi HTTP&#x2F;2 → HTTP&#x2F;1.1</h3><p>Một request HTTP&#x2F;2 (một stream) có thể bị lỗi downgrade thành hai request HTTP&#x2F;1.1. Backend sinh hai response. Frontend dự kiến một response cho stream ban đầu; phần response còn lại có thể được nhúng, bỏ qua, hoặc đọc nhầm tùy frontend.</p>
+<h3 id="3-Blind-va-non-blind"><a href="#3-Blind-va-non-blind" class="headerlink" title="3. Blind và non-blind"></a>3. Blind và non-blind</h3><ul>
+<li><strong>Blind:</strong> Attacker chứng minh request ẩn có thể được thực thi nhưng <strong>không đọc được response hoàn chỉnh</strong>.</li>
+<li><strong>Non-blind:</strong> Attacker có thể làm lộ một phần hoặc toàn bộ response của request ẩn vào response mình nhận.</li>
+</ul>
+<h3 id="4-Lo-header-noi-bo"><a href="#4-Lo-header-noi-bo" class="headerlink" title="4. Lộ header nội bộ"></a>4. Lộ header nội bộ</h3><p>Giả sử frontend thêm header nội bộ sau khi kiểm soát request. Nếu input có CRLF bất hợp pháp được downgrade mà không lọc, backend có thể thấy ranh giới header&#x2F;body sớm hơn frontend dự kiến:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Frontend nghĩ đang thêm header:</span><br><span class="line">X-Internal-Context: &lt;internal-value&gt;</span><br><span class="line"></span><br><span class="line">Backend thực tế có thể coi chuỗi đó là BODY của request trước,</span><br><span class="line">nếu đã gặp \r\n\r\n giả ở phần input attacker.</span><br></pre></td></tr></table></figure>
+
+<p>Chỉ khi backend có chức năng <strong>phản chiếu&#x2F;lưu và hiển thị body</strong>, attacker mới có thể đọc các byte nội bộ này. Không được mặc định mọi header nội bộ sẽ rò rỉ.</p>
+<h3 id="5-HEAD-response-over-read"><a href="#5-HEAD-response-over-read" class="headerlink" title="5. HEAD response over-read"></a>5. HEAD response over-read</h3><p>Theo RFC, response cho <code>HEAD</code> <strong>không có body</strong> nhưng có thể chứa một <code>Content-Length</code> mô tả body mà response GET tương ứng sẽ có.</p>
+<p>Ví dụ backend gửi liên tục:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Response 1 cho HEAD:</span><br><span class="line">HTTP/1.1 200 OK\r\n</span><br><span class="line">Content-Length: 500\r\n</span><br><span class="line">\r\n</span><br><span class="line">[KHÔNG CÓ BODY]</span><br><span class="line"></span><br><span class="line">Response 2 cho request tunnelled:</span><br><span class="line">HTTP/1.1 200 OK\r\n</span><br><span class="line">Content-Length: ...\r\n</span><br><span class="line">\r\n</span><br><span class="line">&lt;html&gt;...&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Nếu frontend không nhớ request ngoài là HEAD, chỉ dựa vào CL&#x3D;500 của Response 1, nó có thể <strong>over-read</strong> 500 byte đầu Response 2 để đưa vào response gửi attacker.</p>
+<p><strong>Các điều kiện quan trọng:</strong></p>
+<ul>
+<li>Frontend phải có lỗi <strong>không xử lý đúng HEAD response</strong>.</li>
+<li>Response thứ hai phải có sẵn và kích thước phù hợp.</li>
+<li>Nếu CL ngắn hơn dữ liệu cần đọc, output bị cắt; nếu CL lớn hơn số byte sẵn có, có thể timeout.</li>
+<li>Không phải mọi frontend đều mắc lỗi này.</li>
+</ul>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling">PortSwigger — HTTP Request Tunnelling</a>.</p>
+<hr>
+<h2 id="XIV-Kiem-thu-xac-minh-va-phong-thu"><a href="#XIV-Kiem-thu-xac-minh-va-phong-thu" class="headerlink" title="XIV. Kiểm thử, xác minh và phòng thủ"></a>XIV. Kiểm thử, xác minh và phòng thủ</h2><h3 id="1-Dinh-huong-kiem-thu-co-kiem-soat"><a href="#1-Dinh-huong-kiem-thu-co-kiem-soat" class="headerlink" title="1. Định hướng kiểm thử có kiểm soát"></a>1. Định hướng kiểm thử có kiểm soát</h3><p>Trong lab hoặc hệ thống có phép thử, đi từ <strong>ít tác động</strong> tới <strong>nhiều tác động</strong>:</p>
+<ol>
+<li><strong>Baseline:</strong> Gửi request bình thường; ghi status, body, header, RTT, connection close và phiên bản HTTP.</li>
+<li><strong>Parser discrepancy:</strong> So sánh kết quả với header framing biến dạng. Hạn chế gửi tiếp request nạn nhân thật.</li>
+<li><strong>Timing probe:</strong> Quan sát delay&#x2F;timeout; <strong>chỉ là chỉ báo</strong>, không tự đủ chứng minh.</li>
+<li><strong>Differential response:</strong> Dùng hai request mà đáp án dự kiến khác nhau để xác minh byte&#x2F;remainder có ảnh hưởng request thứ hai.</li>
+<li><strong>Queue mapping:</strong> Nếu dự kiến RQP, cần response tương ứng có dấu hiệu phân biệt, số lượng response và tính tái lập.</li>
+<li><strong>Impact verification:</strong> Mới đánh giá tác động lên tài khoản, cache hoặc browser mô phỏng trong phạm vi cho phép.</li>
+</ol>
+<p><strong>Cảnh báo vận hành:</strong> Test TE.CL, CL.TE và queue poisoning có thể làm gián đoạn người dùng thật nếu áp dụng lên production. Tránh spam, thử bằng tài khoản&#x2F;dữ liệu test và thời gian kiểm thử được chấp thuận.</p>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/finding">PortSwigger — Finding HRS vulnerabilities</a>.</p>
+<h3 id="2-Burp-Suite-—-nhung-dieu-phai-kiem-tra"><a href="#2-Burp-Suite-—-nhung-dieu-phai-kiem-tra" class="headerlink" title="2. Burp Suite — những điều phải kiểm tra"></a>2. Burp Suite — những điều phải kiểm tra</h3><ul>
+<li>Request đang gửi bằng <strong>HTTP&#x2F;1.1 hay HTTP&#x2F;2</strong>? Giao diện Burp có thể trình bày gần giống raw HTTP&#x2F;1.1 ngay cả với HTTP&#x2F;2, nhưng wire format khác hẳn.</li>
+<li>Burp có <strong>tự cập nhật <code>Content-Length</code></strong> không? Nếu có, một payload cố ý sai CL sẽ bị thay đổi.</li>
+<li>Request group dùng <strong>single connection</strong> hay <strong>separate connections</strong>? Quan trọng là <strong>kết nối upstream do frontend sử dụng</strong>, không thể suy ra chỉ từ kết nối client–Burp.</li>
+<li>Các escape <code>\r\n</code>, byte NUL, tab được gửi thành byte thật hay chữ <code>\</code> + <code>r</code> + <code>\</code> + <code>n</code>?</li>
+<li>Proxy có thêm <code>X-Forwarded-*</code>, <code>Via</code>, cookie, <code>Accept-Encoding</code>, <code>Connection</code>… không?</li>
+<li>Dữ liệu <strong>được frontend forward</strong> có thể khác dữ liệu trong request editor.</li>
+<li>Response 200&#x2F;404&#x2F;timeout có xuất hiện ở lần chạy sạch, với cùng thứ tự, cùng ngữ cảnh không?</li>
+</ul>
+<h3 id="3-Tu-kiem-tra-so-byte-request-bang-Python"><a href="#3-Tu-kiem-tra-so-byte-request-bang-Python" class="headerlink" title="3. Tự kiểm tra số byte request bằng Python"></a>3. Tự kiểm tra số byte request bằng Python</h3><p>Để không phải đếm theo mắt (đặc biệt khi có ký tự Unicode), dùng hàm riêng:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Ví dụ offline, không gửi lưu lượng tới mục tiêu.</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">wire_bytes</span>(<span class="params">lines: <span class="built_in">list</span>[<span class="built_in">str</span>]</span>) -&gt; <span class="built_in">bytes</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Ghép mỗi dòng bằng CRLF, giữ nguyên cả dòng trống cuối.&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;\r\n&quot;</span>.join(lines).encode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line"></span><br><span class="line">post_header = wire_bytes([</span><br><span class="line">    <span class="string">&quot;POST / HTTP/1.1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Host: target.com&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Content-Length: 41&quot;</span>,</span><br><span class="line">    <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span></span><br><span class="line">])</span><br><span class="line"></span><br><span class="line">admin_request = wire_bytes([</span><br><span class="line">    <span class="string">&quot;GET /admin HTTP/1.1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Host: target.com&quot;</span>,</span><br><span class="line">    <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span></span><br><span class="line">])</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;POST header bytes:&#x27;</span>, <span class="built_in">len</span>(post_header))     <span class="comment"># 57</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;GET /admin bytes:&#x27;</span>, <span class="built_in">len</span>(admin_request))  <span class="comment"># 41</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Tại sao có hai chuỗi rỗng <code>&quot;&quot;, &quot;&quot;</code>?</strong> Cần tạo <code>\r\n\r\n</code> sau header cuối; nếu chỉ có một phần tử rỗng thì dễ tạo thiếu một CRLF.</p>
+<p>Đo byte <strong>chưa đủ để kiểm chứng khai thác</strong>, vì frontend có thể viết lại request trước khi forward.</p>
+<h3 id="4-Ma-tran-xac-minh-va-muc-do-bang-chung"><a href="#4-Ma-tran-xac-minh-va-muc-do-bang-chung" class="headerlink" title="4. Ma trận xác minh và mức độ bằng chứng"></a>4. Ma trận xác minh và mức độ bằng chứng</h3><table>
+<thead>
+<tr>
+<th>Quan sát</th>
+<th>Có thể kết luận</th>
+<th><strong>Không thể</strong> kết luận</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>500 Communication timed out</code></td>
+<td>Có bất thường hoặc một hop đang chờ</td>
+<td>Đã khai thác thành công HRS</td>
+</tr>
+<tr>
+<td>Early <code>200 OK</code> cho static file</td>
+<td>Response có thể được tạo sớm</td>
+<td>Backend đã bỏ qua CL&#x2F;body</td>
+</tr>
+<tr>
+<td><code>404</code> của đường dẫn ẩn</td>
+<td>Có dấu hiệu path ẩn được xử lý</td>
+<td>Đã poison response nạn nhân nếu chưa thấy mapping</td>
+</tr>
+<tr>
+<td>Request test thứ hai trả response sai có kiểm soát</td>
+<td>Bằng chứng mạnh về parser differential</td>
+<td>Mọi nạn nhân đều bị ảnh hưởng</td>
+</tr>
+<tr>
+<td>Response có marker XSS nhưng ở attacker</td>
+<td>Payload phản chiếu vào response</td>
+<td>XSS chạy trên browser Carlos</td>
+</tr>
+<tr>
+<td>Instance sạch chuyển từ Not solved → Solved sau chuỗi duy nhất</td>
+<td>Lab đạt điều kiện thành công</td>
+<td>Tự động biết chính xác byte nào backend đã tiêu thụ</td>
+</tr>
+<tr>
+<td>Log của hai hop + raw bytes + response queue</td>
+<td>Có thể dựng lại mechanism đáng tin cậy</td>
+<td>Kết quả tổng quát cho mọi phiên bản proxy</td>
+</tr>
+</tbody></table>
+<h3 id="5-Mot-quy-trinh-viet-bao-cao-khoa-hoc-hon"><a href="#5-Mot-quy-trinh-viet-bao-cao-khoa-hoc-hon" class="headerlink" title="5. Một quy trình viết báo cáo khoa học hơn"></a>5. Một quy trình viết báo cáo khoa học hơn</h3><p>Cho mỗi thử nghiệm:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Hypothesis:</span><br><span class="line">  Frontend nhận body = 0; backend nhận body = N.</span><br><span class="line"></span><br><span class="line">Input:</span><br><span class="line">  Raw request A/B (CRLF chính xác), HTTP version, method gửi, hostname.</span><br><span class="line"></span><br><span class="line">Control:</span><br><span class="line">  Baseline trên instance mới, request thường, cùng cookie khi cần.</span><br><span class="line"></span><br><span class="line">Expected:</span><br><span class="line">  Backend ăn N byte từ B; request còn lại có path /marker.</span><br><span class="line"></span><br><span class="line">Observed:</span><br><span class="line">  Status/responses, timeout, connection reuse, dấu vết log (nếu có).</span><br><span class="line"></span><br><span class="line">Alternative explanations:</span><br><span class="line">  Header rewrite, buffering, packet race, instance solved từ trước.</span><br><span class="line"></span><br><span class="line">Conclusion:</span><br><span class="line">  Confirmed / plausible / unverified — không trộn ba mức này.</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-Defense-in-depth"><a href="#6-Defense-in-depth" class="headerlink" title="6. Defense-in-depth"></a>6. Defense-in-depth</h3><h4 id="Tang-Frontend-Reverse-Proxy"><a href="#Tang-Frontend-Reverse-Proxy" class="headerlink" title="Tầng Frontend &#x2F; Reverse Proxy"></a>Tầng Frontend &#x2F; Reverse Proxy</h4><ul>
+<li>Ưu tiên <strong>HTTP&#x2F;2 end-to-end</strong> với backend được hỗ trợ; nếu H2→H1 là bắt buộc, <strong>kiểm soát tuyệt đối</strong> logic chuyển đổi.</li>
+<li>Reject request có framing mâu thuẫn; không forward field-name sai cú pháp, duplicate CL không đồng nhất, header TE lạ, CRLF bất hợp pháp.</li>
+<li>Khi forward request hợp lệ, tái tạo framing từ nội dung đã xác minh; tuyệt đối không giữ một CL mà backend sẽ hiểu khác.</li>
+<li>Đóng &#x2F; không reuse kết nối khi xuất hiện lỗi framing hoặc khi không bảo đảm đã tiêu thụ hết body&#x2F;response.</li>
+<li>Đảm bảo mapping request↔response, không chuyển response không được dự kiến cho request tiếp theo.</li>
+</ul>
+<h4 id="Tang-Backend"><a href="#Tang-Backend" class="headerlink" title="Tầng Backend"></a>Tầng Backend</h4><ul>
+<li>Không mặc định POST&#x2F;GET tới file tĩnh hoặc redirect <strong>không có body</strong>.</li>
+<li>Nếu trả response sớm, vẫn tiêu thụ&#x2F;loại bỏ đúng bytes còn lại trước reuse, hoặc <strong>đóng connection</strong>.</li>
+<li>Từ chối request mơ hồ, không chấp nhận các header bị lỗi mà frontend sẽ bỏ qua.</li>
+<li>Áp dụng xác thực&#x2F;authorization lại tại backend cho các endpoint quan trọng, không chỉ dựa trên frontend.</li>
+</ul>
+<h4 id="Giam-sat-van-hanh"><a href="#Giam-sat-van-hanh" class="headerlink" title="Giám sát &#x2F; vận hành"></a>Giám sát &#x2F; vận hành</h4><ul>
+<li>Lưu log có request ID xuyên suốt các hop để so khớp request&#x2F;response theo connection và stream.</li>
+<li>Cảnh báo số response không khớp request, HTTP 400&#x2F;502 tăng đột biến, timeout bất thường, invalid CL&#x2F;TE, unexpected keep-alive reuse.</li>
+<li>Vá phần mềm proxy&#x2F;web server và thử hồi quy sau nâng cấp.</li>
+<li>Hạn chế connection reuse có thể giảm một số tình huống cross-user nhưng <strong>không phải sửa tận gốc</strong> và không xóa được tunnelling.</li>
+</ul>
+<p>Nguồn: <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling#how-to-prevent-http-request-smuggling-vulnerabilities">PortSwigger HRS prevention</a>, <a target="_blank" rel="noopener" href="https://cwe.mitre.org/data/definitions/444.html">CWE-444</a>.</p>
+<hr>
+<h2 id="XV-Tong-hop-nhung-diem-de-nham-va-nguon"><a href="#XV-Tong-hop-nhung-diem-de-nham-va-nguon" class="headerlink" title="XV. Tổng hợp, những điểm dễ nhầm và nguồn"></a>XV. Tổng hợp, những điểm dễ nhầm và nguồn</h2><h3 id="1-Bang-so-sanh-ky-thuat"><a href="#1-Bang-so-sanh-ky-thuat" class="headerlink" title="1. Bảng so sánh kỹ thuật"></a>1. Bảng so sánh kỹ thuật</h3><table>
+<thead>
+<tr>
+<th>Tên</th>
+<th>Frontend</th>
+<th>Backend &#x2F; điểm lỗi</th>
+<th>Yếu tố bổ sung để khai thác</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CL.TE</td>
+<td>Dùng CL</td>
+<td>Dùng TE</td>
+<td>CL&#x2F;TE conflict; trạng thái upstream</td>
+</tr>
+<tr>
+<td>TE.CL</td>
+<td>Dùng TE</td>
+<td>Dùng CL</td>
+<td>Parser bất đồng; đúng byte</td>
+</tr>
+<tr>
+<td>TE.TE</td>
+<td>Xử lý TE biến dạng theo cách A</td>
+<td>Xử lý TE theo cách B</td>
+<td>Thường quy về CL.TE&#x2F;TE.CL</td>
+</tr>
+<tr>
+<td>H2.CL</td>
+<td>Tin frame&#x2F;stream H2</td>
+<td>Tin CL do downgrade sai</td>
+<td>Frontend không reject CL mismatch</td>
+</tr>
+<tr>
+<td>H2.TE</td>
+<td>Nhận H2 sai &#x2F; downgrade sai</td>
+<td>Tin TE trong H1</td>
+<td>Forward header bị cấm</td>
+</tr>
+<tr>
+<td>H2 CRLF</td>
+<td>Field H2 không được validate</td>
+<td>CRLF trở thành delimiter H1</td>
+<td>Header splitting &#x2F; request splitting</td>
+</tr>
+<tr>
+<td>CL.0</td>
+<td>Dùng CL &#x2F; forward body</td>
+<td>Bỏ body, đọc như request mới</td>
+<td>Connection còn mở, đủ cú pháp</td>
+</tr>
+<tr>
+<td>H2.0</td>
+<td>Frontend H2 forward body H1</td>
+<td>Backend bỏ body</td>
+<td>Code path CL.0</td>
+</tr>
+<tr>
+<td>0.CL</td>
+<td>Coi body 0</td>
+<td>Dùng CL N</td>
+<td>Early-response gadget để phá deadlock</td>
+</tr>
+<tr>
+<td>Double-desync</td>
+<td>Tưởng Request B bình thường</td>
+<td>Header B bị ăn vào body A</td>
+<td>Phần B còn lại tạo request mới</td>
+</tr>
+<tr>
+<td>RQP</td>
+<td>Chờ N response</td>
+<td>Trả N+1 response</td>
+<td>Không đóng connection, queue mapping sai</td>
+</tr>
+<tr>
+<td>CSD</td>
+<td>Browser tự gửi request</td>
+<td>Target không đọc body nhưng reuse socket</td>
+<td>Browser reuse cùng kết nối H1</td>
+</tr>
+<tr>
+<td>Pause-based</td>
+<td>Stream body sau pause</td>
+<td>Phản hồi&#x2F;kết thúc sớm và reuse</td>
+<td>Timing + state transition</td>
+</tr>
+<tr>
+<td>Tunnelling</td>
+<td>Một request logic</td>
+<td>Nhiều request backend</td>
+<td>Có thể blind&#x2F;non-blind; không cần reuse cross-user</td>
+</tr>
+</tbody></table>
+<h3 id="2-Muoi-cau-hoi-bat-buoc-khi-phan-tich-mot-payload"><a href="#2-Muoi-cau-hoi-bat-buoc-khi-phan-tich-mot-payload" class="headerlink" title="2. Mười câu hỏi bắt buộc khi phân tích một payload"></a>2. Mười câu hỏi bắt buộc khi phân tích một payload</h3><ol>
+<li><strong>Giao thức thực trên từng hop</strong> là H1 hay H2?</li>
+<li>Request chứa bao nhiêu <strong>byte thực</strong>, không phải ký tự hiển thị?</li>
+<li><strong>Frontend coi body dài bao nhiêu?</strong> Dựa vào bằng chứng nào?</li>
+<li><strong>Backend coi body dài bao nhiêu?</strong> Có log hoặc phép thử phân biệt không?</li>
+<li>Backend <strong>trả response trước hay sau khi nhận đủ body</strong>?</li>
+<li>Sau response, backend <strong>tiêu thụ body tiếp</strong>, <strong>bỏ body</strong>, hay <strong>đóng connection</strong>?</li>
+<li>Frontend có <strong>sửa, thêm, xóa header</strong> trước khi forward không?</li>
+<li>Request ẩn là <strong>complete request</strong> hay chỉ <strong>prefix</strong>?</li>
+<li>Có <strong>response dư</strong> thực sự và có được ghép sang request khác không?</li>
+<li>Trạng thái <strong>Solved</strong> có được chứng minh bằng một thí nghiệm sạch và tái lập không?</li>
+</ol>
+<h3 id="3-Nhung-phat-bieu-tuyet-doi-nen-tranh"><a href="#3-Nhung-phat-bieu-tuyet-doi-nen-tranh" class="headerlink" title="3. Những phát biểu tuyệt đối nên tránh"></a>3. Những phát biểu tuyệt đối nên tránh</h3><table>
+<thead>
+<tr>
+<th>Tránh viết</th>
+<th>Nên viết</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>“GET không có body”</td>
+<td>“GET content không có ngữ nghĩa chung nhưng framing vẫn do CL&#x2F;TE quyết định.”</td>
+</tr>
+<tr>
+<td>“TE + CL bắt buộc 400 trong mọi trường hợp”</td>
+<td>“Server có thể từ chối hoặc xử lý theo TE; kết nối phải đóng sau response cho loại request đó.”</td>
+</tr>
+<tr>
+<td>“HTTP&#x2F;2 header được chứa bất kỳ byte nào”</td>
+<td>“HPACK biểu diễn được nhiều byte, nhưng RFC 9113 cấm CR&#x2F;LF&#x2F;NUL trong field value.”</td>
+</tr>
+<tr>
+<td>“Backend phản hồi sớm &#x3D; bỏ body”</td>
+<td>“Backend có thể phản hồi sớm nhưng vẫn tiêu thụ body về sau.”</td>
+</tr>
+<tr>
+<td>“Dữ liệu thừa tự động nằm trong TCP buffer chờ nạn nhân”</td>
+<td>“Parser backend còn byte trên luồng; tùy trạng thái nó có thể xử lý ngay, chờ thêm hoặc đóng kết nối.”</td>
+</tr>
+<tr>
+<td>“CL.0 là bước nào cũng có trong 0.CL”</td>
+<td>“Double-desync có thể chuyển 0.CL thành trạng thái CL.0-like nếu request thứ hai bị cắt đúng điểm.”</td>
+</tr>
+<tr>
+<td>“Gửi được 200 OK là solve”</td>
+<td>“Cần thấy mục tiêu lab trên instance sạch và đủ bằng chứng mapping response.”</td>
+</tr>
+<tr>
+<td>“Dùng H2 end-to-end là giải pháp cho mọi lỗi web”</td>
+<td>“H2 end-to-end giảm mạnh bề mặt desync dạng downgrade&#x2F;H1 framing; vẫn cần validate và triển khai đúng.”</td>
+</tr>
+</tbody></table>
+<h3 id="4-Nguon-chuan-ky-thuat"><a href="#4-Nguon-chuan-ky-thuat" class="headerlink" title="4. Nguồn chuẩn kỹ thuật"></a>4. Nguồn chuẩn kỹ thuật</h3><ol>
+<li><strong>IETF RFC 9110 — HTTP Semantics:</strong> <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9110.html">https://www.rfc-editor.org/rfc/rfc9110.html</a></li>
+<li><strong>IETF RFC 9112 — HTTP&#x2F;1.1 (đặc biệt §5.1, §6.1–6.3, §11.2):</strong> <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9112.html">https://www.rfc-editor.org/rfc/rfc9112.html</a></li>
+<li><strong>IETF RFC 9113 — HTTP&#x2F;2 (đặc biệt §8.1.1, §8.2.1, §8.2.2):</strong> <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9113.html">https://www.rfc-editor.org/rfc/rfc9113.html</a></li>
+<li><strong>PortSwigger Web Security Academy — HTTP Request Smuggling:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling">https://portswigger.net/web-security/request-smuggling</a></li>
+<li><strong>PortSwigger — Advanced Request Smuggling:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced">https://portswigger.net/web-security/request-smuggling/advanced</a></li>
+<li><strong>PortSwigger — Finding Request Smuggling:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/finding">https://portswigger.net/web-security/request-smuggling/finding</a></li>
+<li><strong>PortSwigger — Response Queue Poisoning:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning">https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning</a></li>
+<li><strong>PortSwigger — Client-Side Desync:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/browser/client-side-desync">https://portswigger.net/web-security/request-smuggling/browser/client-side-desync</a></li>
+<li><strong>PortSwigger — Pause-Based Desync:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync">https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync</a></li>
+<li><strong>PortSwigger — Request Tunnelling:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling">https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling</a></li>
+<li><strong>James Kettle (2025) — HTTP&#x2F;1.1 Must Die:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/research/http1-must-die">https://portswigger.net/research/http1-must-die</a></li>
+<li><strong>PortSwigger (2026) — Conquering the 0.CL Challenge:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/blog/http-1-1-must-die-conquering-the-0-cl-challenge">https://portswigger.net/blog/http-1-1-must-die-conquering-the-0-cl-challenge</a></li>
+<li><strong>Nicolò Vinci (2025) — 0.CL PortSwigger Lab Solutions:</strong> <a target="_blank" rel="noopener" href="https://nicolovinci.com/posts/0cl/">https://nicolovinci.com/posts/0cl/</a></li>
+<li><strong>PortSwigger — Lab 0.CL:</strong> <a target="_blank" rel="noopener" href="https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-0cl-request-smuggling">https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-0cl-request-smuggling</a></li>
+<li><strong>Apache Software Foundation — CVE-2022-22720:</strong> <a target="_blank" rel="noopener" href="https://httpd.apache.org/security/vulnerabilities_24.html">https://httpd.apache.org/security/vulnerabilities_24.html</a></li>
+<li><strong>MITRE CWE-444:</strong> <a target="_blank" rel="noopener" href="https://cwe.mitre.org/data/definitions/444.html">https://cwe.mitre.org/data/definitions/444.html</a></li>
+</ol>
+<h3 id="5-Pham-vi-chung-cu-va-gioi-han-cua-ban-hieu-dinh"><a href="#5-Pham-vi-chung-cu-va-gioi-han-cua-ban-hieu-dinh" class="headerlink" title="5. Phạm vi chứng cứ và giới hạn của bản hiệu đính"></a>5. Phạm vi chứng cứ và giới hạn của bản hiệu đính</h3><ul>
+<li><strong>Được đối chiếu trực tiếp với chuẩn &#x2F; nghiên cứu công khai:</strong> quy tắc CL&#x2F;TE của H1, định dạng&#x2F;field validity của H2, nguyên lý CL.0&#x2F;0.CL, double-desync, CSD, pause-based desync, request tunnelling, RQP.</li>
+<li><strong>Được kiểm tra offline:</strong> ví dụ byte-exact <code>57</code>&#x2F;<code>41</code> với <code>target.com</code> và CRLF.</li>
+<li><strong>Chưa được kiểm chứng trên chính instance lab của tác giả:</strong> chuỗi byte backend thực nhận, việc POST + <code>Content-Length : 212</code> gây Solved trong lần thử cụ thể, trạng thái connection và response queue ở thời điểm đó. Phải giữ như một <strong>quan sát chưa giải thích đầy đủ</strong>, không viết thành cơ chế đã chứng minh.</li>
+<li><strong>Không có mục tiêu “đủ hết mọi biến thể HRS”</strong>: lĩnh vực còn các biến thể parser discrepancy, connection-state, caching, path normalization, HTTP&#x2F;3 gateway và nghiên cứu mới. Bản này ưu tiên nội dung cốt lõi và các nhánh bạn đã nghiên cứu; khi mở rộng cần trích nguồn cụ thể và thực nghiệm tái lập.</li>
+</ul>
+<hr>
+<p><strong>Kết luận chung:</strong> HTTP Request Smuggling không đơn thuần là một payload “lén thêm request”. Nó là lỗi không nhất quán về <strong>framing, trạng thái và ánh xạ response</strong> xuyên các thành phần xử lý HTTP. Khi phân tích một trường hợp, phải đo chính xác byte, xác định trạng thái từng parser và phân biệt kết quả quan sát được với cơ chế đã được chứng minh.</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io">H00d1eBl4ck</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://elliotbigfan.github.io/2026/11/15/Research/web/http-request-smuggling/">https://elliotbigfan.github.io/2026/11/15/Research/web/http-request-smuggling/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Research/">Research</a><a class="post-meta__tags" href="/tags/Web/">Web</a></div><div class="post-share"><div class="social-share" data-image="/img/research/web/http-request-smuggling/poster.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/07/16/2026/ctf/lykn/2026/wu/" title="Writeup: LYKN CTF 2026"><img class="cover" src="/img/ctf/lykn/poster.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Writeup: LYKN CTF 2026</div></div><div class="info-2"><div class="info-item-1">H34p_D3v1l WriteupThông tin challenge Category: pwn Binary: Heap_devil Libc: glibc 2.39 Protections:  123456RELRO:      Full RELROStack:      Canary foundNX:         NX enabledPIE:        PIE enabledSHSTK:      EnabledIBT:        Enabled  Binary là một heap note manager đơn giản với các chức năng: 1234561. Create note2. View note3. Edit note4. Delete note5. Change note size6. Exit  Mục tiêu là khai thác UAF&#x2F;OOB trong note table, leak heap&#x2F;libc, sau đó tcache poisoning để overwrite _...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/18/Research/web/flask-bin/" title="Research: Bypass Werkzeug Debug PIN"><img class="cover" src="/img/research/web/flask-bin/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-18</div><div class="info-item-2">Research: Bypass Werkzeug Debug PIN</div></div><div class="info-2"><div class="info-item-1">Flask &#x2F; Werkzeug Debug PIN – Full Theory &amp; Exploitation Guide1. Tổng quan bài toánDạng bài này xuất hiện rất thường xuyên trong CTF Web &#x2F; Pentest lab khi:  Server chạy Flask ở chế độ debug Debugger của Werkzeug được bật Truy cập debugger yêu cầu PIN Ứng dụng tồn tại primitive đọc file tùy ý (LFI, path traversal, SSRF → file)  Mục tiêu cuối cùng:  Tính toán chính xác Werkzeug Debug PIN để truy cập interactive console → RCE   2. Điều kiện tiên quyết (Prerequisites)Bài bắt buộc phả...</div></div></div></a><a class="pagination-related" href="/2026/01/14/Research/pwn/fsop/" title="Research: File Stream Oriented Programming (FSOP)"><img class="cover" src="/img/research/pwn/fsop/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Research: File Stream Oriented Programming (FSOP)</div></div><div class="info-2"><div class="info-item-1">Khái niệm về FILE struct FILE là kiểu dữ liệu (struct) mà thư viện C chuẩn (stdio) dùng để đại diện cho một luồng I&#x2F;O (stream) — ví dụ: file trên đĩa, stdin&#x2F;stdout, pipe, socket… khi dùng fopen&#x2F;fread&#x2F;fwrite&#x2F;fprintf&#x2F;fclose  Cấu trúc của FILE trong glibc: Trong glibc, FILE (thường là _IO_FILE &#x2F; _IO_FILE_plus) là một struct lớn có:  buffer pointers (đang đọc&#x2F;ghi tới đâu) flags&#x2F;mode (đọc&#x2F;ghi, wide&#x2F;byte, lỗi&#x2F;EOF…) file descriptor (fd) loc...</div></div></div></a><a class="pagination-related" href="/2026/03/02/2026/ctf/bkctf/wu/" title="Writeup: BK CTF 2026"><img class="cover" src="/img/ctf/bkctf/poster.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-02</div><div class="info-item-2">Writeup: BK CTF 2026</div></div><div class="info-2"><div class="info-item-1">Web | TinySQL 2Phân tích các đoạn code xử lý chính1. Route login in app.py: 1234567891011121314151617@app.route(&#x27;/login&#x27;, methods=[&#x27;GET&#x27;, &#x27;POST&#x27;])def login():    if request.method == &#x27;GET&#x27;: return render_template(&#x27;login.html&#x27;)    # user lookup syntax `S:[user]:[pass]#comment`    # results = [id, user, pass]    # removed sql injection    # code, results = conn.query(&#x27;S:&#x27; + request.form[&#x27;user&#x27;] +  &#x27;:&#x27; + request.form...</div></div></div></a><a class="pagination-related" href="/2026/02/16/2026/ctf/lactf/wu/" title="Writeup: LA CTF 2026"><img class="cover" src="/img/ctf/lactf/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-16</div><div class="info-item-2">Writeup: LA CTF 2026</div></div><div class="info-2"><div class="info-item-1">Web | GlotqGiới thiệuGlotq là một challenge CTF khai thác lỗ hổng trong ứng dụng web viếtbằng Go, tận dụng sự không nhất quán giữa lớp security middleware vàcác handler thực thi lệnh. Cụ thể, ta gửi payload đến endpoint /jsonnhưng gán header Content-Type: application/yaml. Khi đó middleware sửdụng YAML parser trong khi handler xử lý JSON parser. Kết quả là payloadđược giải mã khác nhau ở hai bước, cho phép vượt qua cơ chế kiểm tra vàthực thi lệnh bất hợp lệ.  Cơ chế ứng dụng và middlewareXét ...</div></div></div></a><a class="pagination-related" href="/2026/01/14/2025/ctf/asisctf/wu/" title="Writeup: ASIS CTF 2025"><img class="cover" src="/img/ctf/asis/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Writeup: ASIS CTF 2025</div></div><div class="info-2"><div class="info-item-1">Web | Bookmarks Phân tích file app.py, ta có thể thấy bug CLRF injection nằm ở hàm dashboard và hoàn toàn có thể tận dụng bug này để gây ra XSS.  1234567891011121314151617181920@app.route(&quot;/dashboard&quot;, methods=[&#x27;GET&#x27;])def dashboard():    user_id = session.get(&quot;user_id&quot;)    if not user_id:        return &quot;User not logged&quot;, 400    username = None    with sqlite3.connect(DB_NAME) as conn:        cur = conn.execute(&quot;SELECT username FROM users WHERE id =...</div></div></div></a><a class="pagination-related" href="/2025/11/11/2025/ctf/Infobahn/wu/" title="Writeup: Infobahn 2025"><img class="cover" src="/img/ctf/infobahn/poster.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">Writeup: Infobahn 2025</div></div><div class="info-2"><div class="info-item-1">Beginner (Web) | Challenge: Bitset, Bitsets và Bitsetsy Các challenges này tác giả đã cố tình để unintended :&gt;   Mình chỉ cần truy cập /run.sh là lấy đc flag cho cả 3 bài :&gt;    Ở các challenge revenge sau sẽ bỏ đi unintended này và cần phải hack thật sự.  Beginner (Web) | Challenge: Bitset-revenge, Bitsets-revengeBitset-revenge Chall này validate không an toàn ở param url và truyền giá trị url này vào thuộc tính src của tag img dẫn đến kẻ tấn công có thể bypass và gây ra xss lấy flag đư...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/favicon_io/android-chrome-192x192.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">H00d1eBl4ck</div><div class="author-info-description">Thuan Le</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">23</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/ElliotBigFan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/ElliotBigFan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">I'm trying to be better</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HTTP-Request-Smuggling-HRS-Co-che-ky-thuat-khai-thac-va-phuong-phap-kiem-chung"><span class="toc-number">1.</span> <span class="toc-text">HTTP Request Smuggling (HRS): Cơ chế, kỹ thuật khai thác và phương pháp kiểm chứng</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Muc-luc"><span class="toc-number">1.1.</span> <span class="toc-text">Mục lục</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Nhung-hieu-dinh-quan-trong-so-voi-ban-thao-goc"><span class="toc-number">1.2.</span> <span class="toc-text">Những hiệu đính quan trọng so với bản thảo gốc</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#I-Khai-niem-va-mo-hinh-de-doa"><span class="toc-number">1.3.</span> <span class="toc-text">I. Khái niệm và mô hình đe dọa</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-HTTP-Request-Smuggling-la-gi"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. HTTP Request Smuggling là gì?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Ba-khai-niem-khong-duoc-danh-dong"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. Ba khái niệm không được đánh đồng</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Lop-giao-thuc-TCP-khong-phan-tich-HTTP"><span class="toc-number">1.3.3.</span> <span class="toc-text">3. Lớp giao thức: TCP không phân tích HTTP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Dieu-kien-giup-tac-dong-den-nan-nhan"><span class="toc-number">1.3.4.</span> <span class="toc-text">4. Điều kiện giúp tác động đến nạn nhân</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#II-HTTP-1-0-HTTP-1-1-va-framing"><span class="toc-number">1.4.</span> <span class="toc-text">II. HTTP&#x2F;1.0, HTTP&#x2F;1.1 và framing</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-HTTP-1-0-%E2%80%94-can-sua-mot-ngo-nhan-thuong-gap"><span class="toc-number">1.4.1.</span> <span class="toc-text">1. HTTP&#x2F;1.0 — cần sửa một ngộ nhận thường gặp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-HTTP-1-1-%E2%80%94-persistent-connection-va-pipelining"><span class="toc-number">1.4.2.</span> <span class="toc-text">2. HTTP&#x2F;1.1 — persistent connection và pipelining</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Content-Length-CL"><span class="toc-number">1.4.3.</span> <span class="toc-text">3. Content-Length (CL)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Transfer-Encoding-chunked-TE"><span class="toc-number">1.4.4.</span> <span class="toc-text">4. Transfer-Encoding: chunked (TE)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Uu-tien-framing-va-RFC-9112-muc-6-1%E2%80%936-3"><span class="toc-number">1.4.5.</span> <span class="toc-text">5. Ưu tiên framing và RFC 9112 (mục 6.1–6.3)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-Nhung-ngoai-le-quan-trong-o-chieu-response"><span class="toc-number">1.4.6.</span> <span class="toc-text">6. Những ngoại lệ quan trọng ở chiều response</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#III-HTTP-2-va-cac-khac-biet-thiet-ke"><span class="toc-number">1.5.</span> <span class="toc-text">III. HTTP&#x2F;2 và các khác biệt thiết kế</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Binary-framing"><span class="toc-number">1.5.1.</span> <span class="toc-text">1. Binary framing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Multiplexing-va-Stream-ID"><span class="toc-number">1.5.2.</span> <span class="toc-text">2. Multiplexing và Stream ID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Pseudo-headers-chinh-xac"><span class="toc-number">1.5.3.</span> <span class="toc-text">3. Pseudo-headers chính xác</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Dieu-kien-RFC-9113-ve-content-length-va-field-validity"><span class="toc-number">1.5.4.</span> <span class="toc-text">4. Điều kiện RFC 9113 về content-length và field validity</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IV-So-sanh-cac-phien-ban-HTTP"><span class="toc-number">1.6.</span> <span class="toc-text">IV. So sánh các phiên bản HTTP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#V-CL-TE-%E2%80%94-Frontend-dung-Content-Length-backend-dung-Transfer-Encoding"><span class="toc-number">1.7.</span> <span class="toc-text">V. CL.TE — Frontend dùng Content-Length, backend dùng Transfer-Encoding</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Root-cause"><span class="toc-number">1.7.1.</span> <span class="toc-text">1. Root cause</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Vi-du-minh-hoa-ranh-gioi"><span class="toc-number">1.7.2.</span> <span class="toc-text">2. Ví dụ minh họa ranh giới</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Request-prefix-vs-complete-request"><span class="toc-number">1.7.3.</span> <span class="toc-text">3. Request prefix vs complete request</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Tac-dong-co-dieu-kien"><span class="toc-number">1.7.4.</span> <span class="toc-text">4. Tác động có điều kiện</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#VI-TE-CL-%E2%80%94-Frontend-dung-Transfer-Encoding-backend-dung-Content-Length"><span class="toc-number">1.8.</span> <span class="toc-text">VI. TE.CL — Frontend dùng Transfer-Encoding, backend dùng Content-Length</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Root-cause-1"><span class="toc-number">1.8.1.</span> <span class="toc-text">1. Root cause</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Minh-hoa-an-toan-bang-so-do-byte"><span class="toc-number">1.8.2.</span> <span class="toc-text">2. Minh họa an toàn bằng sơ đồ byte</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Dieu-thuong-bi-nham"><span class="toc-number">1.8.3.</span> <span class="toc-text">3. Điều thường bị nhầm</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#VII-TE-TE-va-header-obfuscation"><span class="toc-number">1.9.</span> <span class="toc-text">VII. TE.TE và header obfuscation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-TE-TE-khong-phai-co-che-framing-thu-ba"><span class="toc-number">1.9.1.</span> <span class="toc-text">1. TE.TE không phải cơ chế framing thứ ba</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Cac-dang-input-bat-thuong-can-nhan-dien"><span class="toc-number">1.9.2.</span> <span class="toc-text">2. Các dạng input bất thường cần nhận diện</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-obs-fold-va-NUL"><span class="toc-number">1.9.3.</span> <span class="toc-text">3. obs-fold và NUL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Phong-thu"><span class="toc-number">1.9.4.</span> <span class="toc-text">4. Phòng thủ</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#VIII-HTTP-2-downgrading-H2-CL-H2-TE-va-CRLF-injection"><span class="toc-number">1.10.</span> <span class="toc-text">VIII. HTTP&#x2F;2 downgrading: H2.CL, H2.TE và CRLF injection</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Kien-truc-HTTP-2-%E2%86%92-HTTP-1-1"><span class="toc-number">1.10.1.</span> <span class="toc-text">1. Kiến trúc HTTP&#x2F;2 → HTTP&#x2F;1.1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-H2-CL"><span class="toc-number">1.10.2.</span> <span class="toc-text">2. H2.CL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-H2-TE"><span class="toc-number">1.10.3.</span> <span class="toc-text">3. H2.TE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-HTTP-2-CRLF-injection-va-request-splitting"><span class="toc-number">1.10.4.</span> <span class="toc-text">4. HTTP&#x2F;2 CRLF injection và request splitting</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Response-queue-poisoning-RQP"><span class="toc-number">1.10.5.</span> <span class="toc-text">5. Response queue poisoning (RQP)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-Phong-thu-voi-HTTP-2-downgrading"><span class="toc-number">1.10.6.</span> <span class="toc-text">6. Phòng thủ với HTTP&#x2F;2 downgrading</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IX-CL-0-va-H2-0"><span class="toc-number">1.11.</span> <span class="toc-text">IX. CL.0 và H2.0</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-CL-0-la-gi"><span class="toc-number">1.11.1.</span> <span class="toc-text">1. CL.0 là gì?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Vi-du-minh-hoa"><span class="toc-number">1.11.2.</span> <span class="toc-text">2. Ví dụ minh họa</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Dieu-kien-phai-chung-minh"><span class="toc-number">1.11.3.</span> <span class="toc-text">3. Điều kiện phải chứng minh</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-H2-0"><span class="toc-number">1.11.4.</span> <span class="toc-text">4. H2.0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Early-response-khong-dong-nghia-CL-0"><span class="toc-number">1.11.5.</span> <span class="toc-text">5. Early response không đồng nghĩa CL.0</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#X-0-CL-early-response-va-double-desync"><span class="toc-number">1.12.</span> <span class="toc-text">X. 0.CL, early response và double-desync</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Ban-chat-0-CL-khong-phai-CL-0"><span class="toc-number">1.12.1.</span> <span class="toc-text">1. Bản chất 0.CL (không phải CL.0)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Vi-sao-co-0-CL-deadlock"><span class="toc-number">1.12.2.</span> <span class="toc-text">2. Vì sao có 0.CL deadlock?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Early-response-gadget-giai-quyet-dieu-gi"><span class="toc-number">1.12.3.</span> <span class="toc-text">3. Early-response gadget giải quyết điều gì?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Double-desync-0-CL-%E2%86%92-trang-thai-CL-0-like"><span class="toc-number">1.12.4.</span> <span class="toc-text">4. Double-desync: 0.CL → trạng thái CL.0-like</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Request-A-%E2%80%94-tao-0-CL"><span class="toc-number">1.12.4.1.</span> <span class="toc-text">Request A — tạo 0.CL</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Request-B-%E2%80%94-phan-dau-bi-backend-tieu-thu-phan-sau-tro-thanh-request-moi"><span class="toc-number">1.12.4.2.</span> <span class="toc-text">Request B — phần đầu bị backend tiêu thụ, phần sau trở thành request mới</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Tu-Double-Desync-toi-Response-Queue-Poisoning-trong-lab-0-CL"><span class="toc-number">1.12.5.</span> <span class="toc-text">5. Từ Double-Desync tới Response Queue Poisoning trong lab 0.CL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-Phep-thu-xac-dinh-backend-con-tieu-thu-body-sau-early-response"><span class="toc-number">1.12.6.</span> <span class="toc-text">6. Phép thử xác định backend còn tiêu thụ body sau early response</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-Truong-hop-payload-gop-da-tung-quan-sat-Content-Length-212"><span class="toc-number">1.12.7.</span> <span class="toc-text">7. Trường hợp payload gộp đã từng quan sát: Content-Length : 212</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XI-Client-Side-Desync-CSD"><span class="toc-number">1.13.</span> <span class="toc-text">XI. Client-Side Desync (CSD)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Khac-biet-voi-server-side-request-smuggling"><span class="toc-number">1.13.1.</span> <span class="toc-text">1. Khác biệt với server-side request smuggling</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Co-che-pho-bien"><span class="toc-number">1.13.2.</span> <span class="toc-text">2. Cơ chế phổ biến</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Vi-du-JavaScript-mo-hinh-thu-nghiem"><span class="toc-number">1.13.3.</span> <span class="toc-text">3. Ví dụ JavaScript (mô hình thử nghiệm)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Phan-biet-early-response-va-CSD-thuc-su"><span class="toc-number">1.13.4.</span> <span class="toc-text">4. Phân biệt early response và CSD thực sự</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Phong-thu"><span class="toc-number">1.13.5.</span> <span class="toc-text">5. Phòng thủ</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XII-Pause-Based-Desync"><span class="toc-number">1.14.</span> <span class="toc-text">XII. Pause-Based Desync</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Mo-hinh"><span class="toc-number">1.14.1.</span> <span class="toc-text">1. Mô hình</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Dieu-kien-can-kiem-tra"><span class="toc-number">1.14.2.</span> <span class="toc-text">2. Điều kiện cần kiểm tra</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Timeline-minh-hoa"><span class="toc-number">1.14.3.</span> <span class="toc-text">3. Timeline minh họa</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Vi-du-lich-su-Apache-CVE-2022-22720"><span class="toc-number">1.14.4.</span> <span class="toc-text">4. Ví dụ lịch sử: Apache CVE-2022-22720</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XIII-Request-Tunnelling"><span class="toc-number">1.15.</span> <span class="toc-text">XIII. Request Tunnelling</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Smuggling-so-voi-tunnelling"><span class="toc-number">1.15.1.</span> <span class="toc-text">1. Smuggling so với tunnelling</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Tunnelling-qua-chuyen-doi-HTTP-2-%E2%86%92-HTTP-1-1"><span class="toc-number">1.15.2.</span> <span class="toc-text">2. Tunnelling qua chuyển đổi HTTP&#x2F;2 → HTTP&#x2F;1.1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Blind-va-non-blind"><span class="toc-number">1.15.3.</span> <span class="toc-text">3. Blind và non-blind</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Lo-header-noi-bo"><span class="toc-number">1.15.4.</span> <span class="toc-text">4. Lộ header nội bộ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-HEAD-response-over-read"><span class="toc-number">1.15.5.</span> <span class="toc-text">5. HEAD response over-read</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XIV-Kiem-thu-xac-minh-va-phong-thu"><span class="toc-number">1.16.</span> <span class="toc-text">XIV. Kiểm thử, xác minh và phòng thủ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Dinh-huong-kiem-thu-co-kiem-soat"><span class="toc-number">1.16.1.</span> <span class="toc-text">1. Định hướng kiểm thử có kiểm soát</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Burp-Suite-%E2%80%94-nhung-dieu-phai-kiem-tra"><span class="toc-number">1.16.2.</span> <span class="toc-text">2. Burp Suite — những điều phải kiểm tra</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Tu-kiem-tra-so-byte-request-bang-Python"><span class="toc-number">1.16.3.</span> <span class="toc-text">3. Tự kiểm tra số byte request bằng Python</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Ma-tran-xac-minh-va-muc-do-bang-chung"><span class="toc-number">1.16.4.</span> <span class="toc-text">4. Ma trận xác minh và mức độ bằng chứng</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Mot-quy-trinh-viet-bao-cao-khoa-hoc-hon"><span class="toc-number">1.16.5.</span> <span class="toc-text">5. Một quy trình viết báo cáo khoa học hơn</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-Defense-in-depth"><span class="toc-number">1.16.6.</span> <span class="toc-text">6. Defense-in-depth</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Tang-Frontend-Reverse-Proxy"><span class="toc-number">1.16.6.1.</span> <span class="toc-text">Tầng Frontend &#x2F; Reverse Proxy</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Tang-Backend"><span class="toc-number">1.16.6.2.</span> <span class="toc-text">Tầng Backend</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Giam-sat-van-hanh"><span class="toc-number">1.16.6.3.</span> <span class="toc-text">Giám sát &#x2F; vận hành</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XV-Tong-hop-nhung-diem-de-nham-va-nguon"><span class="toc-number">1.17.</span> <span class="toc-text">XV. Tổng hợp, những điểm dễ nhầm và nguồn</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Bang-so-sanh-ky-thuat"><span class="toc-number">1.17.1.</span> <span class="toc-text">1. Bảng so sánh kỹ thuật</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Muoi-cau-hoi-bat-buoc-khi-phan-tich-mot-payload"><span class="toc-number">1.17.2.</span> <span class="toc-text">2. Mười câu hỏi bắt buộc khi phân tích một payload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Nhung-phat-bieu-tuyet-doi-nen-tranh"><span class="toc-number">1.17.3.</span> <span class="toc-text">3. Những phát biểu tuyệt đối nên tránh</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Nguon-chuan-ky-thuat"><span class="toc-number">1.17.4.</span> <span class="toc-text">4. Nguồn chuẩn kỹ thuật</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Pham-vi-chung-cu-va-gioi-han-cua-ban-hieu-dinh"><span class="toc-number">1.17.5.</span> <span class="toc-text">5. Phạm vi chứng cứ và giới hạn của bản hiệu đính</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/11/15/Research/web/http-request-smuggling/" title="HTTP Request Smuggling"><img src="/img/research/web/http-request-smuggling/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="HTTP Request Smuggling"/></a><div class="content"><a class="title" href="/2026/11/15/Research/web/http-request-smuggling/" title="HTTP Request Smuggling">HTTP Request Smuggling</a><time datetime="2026-11-15T12:46:51.000Z" title="Created 2026-11-15 19:46:51">2026-11-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/16/2026/ctf/lykn/2026/wu/" title="Writeup: LYKN CTF 2026"><img src="/img/ctf/lykn/poster.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Writeup: LYKN CTF 2026"/></a><div class="content"><a class="title" href="/2026/07/16/2026/ctf/lykn/2026/wu/" title="Writeup: LYKN CTF 2026">Writeup: LYKN CTF 2026</a><time datetime="2026-07-16T03:58:31.000Z" title="Created 2026-07-16 10:58:31">2026-07-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/14/2026/ctf/test/wu3/" title="PHP Deserialize"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PHP Deserialize"/></a><div class="content"><a class="title" href="/2026/07/14/2026/ctf/test/wu3/" title="PHP Deserialize">PHP Deserialize</a><time datetime="2026-07-14T09:04:19.000Z" title="Created 2026-07-14 16:04:19">2026-07-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Python Deserialize (Pickle)"/></a><div class="content"><a class="title" href="/2026/07/07/2026/ctf/test/wu2/" title="Python Deserialize (Pickle)">Python Deserialize (Pickle)</a><time datetime="2026-07-07T10:02:40.000Z" title="Created 2026-07-07 17:02:40">2026-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/07/03/2026/ctf/test/wu/" title="Java Deserialize"><img src="/img/ctf/test/poster.avif" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Java Deserialize"/></a><div class="content"><a class="title" href="/2026/07/03/2026/ctf/test/wu/" title="Java Deserialize">Java Deserialize</a><time datetime="2026-07-03T14:18:24.000Z" title="Created 2026-07-03 21:18:24">2026-07-03</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/research/web/http-request-smuggling/poster.png);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By H00d1eBl4ck</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="1" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
